@@ -13,8 +13,6 @@ on:
   pull_request:
     branches:
       - personal
-    paths:
-      - .github/workflows/ios-ipa.yml
 
 concurrency:
   group: ios-ipa-${{ github.ref }}
