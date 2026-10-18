@@ -918,8 +918,8 @@ class _EditMealScreenState extends State<EditMealScreen> {
           ),
         );
       }
-    } catch (exception) {
-      log.warning("Error while creating new meal entity");
+    } catch (exception, stacktrace) {
+      log.warning("Error while creating new meal entity", exception, stacktrace);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context)
