@@ -521,7 +521,7 @@
   "plausibilityUnclearBody": "The nutrition values of this product do not add up. Please check them against the label.",
   "plausibilityCorrectAction": "Correct values",
   "plausibilityKeepAction": "Use anyway",
-  "plausibilityEnergyBody": "{stated} kcal are stated, but fat, carbohydrates and protein add up to about {expected} kcal. Please check the values against the label.",
+  "plausibilityEnergyBody": "{stated} kcal are stated, but fat, carbohydrates, protein and fibre add up to about {expected} kcal. Please check the values against the label.",
   "@plausibilityEnergyBody": {"placeholders": {"stated": {"type": "int"}, "expected": {"type": "int"}}},
   "importAction": "Import",
   "importActivityConfirmContent": "These activities will be added to today.",

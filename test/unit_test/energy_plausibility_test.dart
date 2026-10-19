@@ -70,6 +70,16 @@ void main() {
     });
   });
 
+  test('carbohydrate that includes fibre (FDC) is no mismatch', () {
+    // 9*4 + 4*(25-20) + 4*20 + 2*20 = 176 kcal with fibre inside the carbs.
+    expect(
+      checkEnergyPlausibility(
+        _per100(kcal: 176, fat: 4, carbs: 25, protein: 20, fiber: 20),
+      ),
+      isNull,
+    );
+  });
+
   test('a small absolute gap on a light drink is no mismatch', () {
     expect(
       checkEnergyPlausibility(_per100(kcal: 30, fat: 0, carbs: 11, protein: 0)),
