@@ -391,6 +391,40 @@ void main() {
     expect(fresh.profileBox.containsKey('partner'), isFalse);
   });
 
+  for (final name in [
+    'fasting_sessions.json',
+    'water_intake.json',
+    'goal_settings.json',
+    'user_profile.json',
+  ]) {
+    test(
+      'a folder file holding null is rejected before any write ($name)',
+      () async {
+        final archive = await exportFrom(await twoProfileDevice());
+        final broken = Archive();
+        for (final file in archive.files) {
+          if (file.name == 'profiles/partner/$name') continue;
+          broken.addFile(file);
+        }
+        broken.addFile(
+          ArchiveFile.bytes('profiles/partner/$name', utf8.encode('null')),
+        );
+        final fresh = await _Device.create();
+        final active = await fresh.addProfile(
+          'device-default',
+          makeActive: true,
+        );
+        await active.intakeBox.add(intake('keep-me'));
+
+        await expectLater(
+          importInto(fresh, broken, replaceExisting: true),
+          throwsA(isA<ExportImportFailure>()),
+        );
+        expect(active.intakeBox.values.map((i) => i.id), ['keep-me']);
+      },
+    );
+  }
+
   test(
     'an active profile that is another profile of the backup is refused',
     () async {

@@ -287,30 +287,38 @@ class ProfilesBackup {
           return _decodeFinite(file);
         }
 
-        List<Map<String, dynamic>> rows(Object? json) =>
-            (json as List? ?? const []).cast<Map<String, dynamic>>();
+        List<Map<String, dynamic>> rows(String name, {bool required = false}) {
+          final json = read(name, required: required);
+          if (json == null && folder.findFile(name) == null) return const [];
+          return (json as List).cast<Map<String, dynamic>>();
+        }
 
         rows(
-          read(activityFileName, required: true),
+          activityFileName,
+          required: true,
         ).forEach(UserActivityDBO.fromJson);
-        rows(read(intakeFileName, required: true)).forEach(IntakeDBO.fromJson);
+        rows(intakeFileName, required: true).forEach(IntakeDBO.fromJson);
         rows(
-          read(trackedDayFileName, required: true),
+          trackedDayFileName,
+          required: true,
         ).forEach(TrackedDayDBO.fromJson);
-        rows(read(weightLogFileName)).forEach(WeightLogDBO.fromJson);
+        rows(weightLogFileName).forEach(WeightLogDBO.fromJson);
         rows(
-          read(PersonalBackupExtras.waterIntakeFileName),
+          PersonalBackupExtras.waterIntakeFileName,
         ).forEach(WaterIntakeDBO.fromJson);
         rows(
-          read(PersonalBackupExtras.fastingSessionsFileName),
+          PersonalBackupExtras.fastingSessionsFileName,
         ).forEach(FastingSessionDBO.fromJson);
-        final goals = read(goalSettingsFileName);
-        if (goals != null) {
-          GoalSettingsBackup.fromJson(goals as Map<String, dynamic>);
+        if (folder.findFile(goalSettingsFileName) != null) {
+          GoalSettingsBackup.fromJson(
+            read(goalSettingsFileName) as Map<String, dynamic>,
+          );
         }
-        final user = read(PersonalBackupExtras.userProfileFileName);
-        if (user != null) {
-          PersonalBackupExtras.decodeUserProfile(user as Map<String, dynamic>);
+        if (folder.findFile(PersonalBackupExtras.userProfileFileName) != null) {
+          PersonalBackupExtras.decodeUserProfile(
+            read(PersonalBackupExtras.userProfileFileName)
+                as Map<String, dynamic>,
+          );
         }
       },
     );
