@@ -263,6 +263,78 @@ void main() {
     expect(fieldText(tester, l10nEn.customMealBarcodeLabel), '4056489123456');
     expect(fieldText(tester, l10nEn.mealEnergyLabel), '250');
   });
+
+  testWidgets('after a scan without a barcode it offers to scan one', (
+    tester,
+  ) async {
+    registerScanner(label);
+    await pumpEditMeal(
+      tester,
+      EditMealScreenArguments(
+        DateTime(2026, 10, 19),
+        MealEntity.empty(),
+        IntakeTypeEntity.snack,
+        false,
+      ),
+    );
+
+    await tester.tap(find.text(l10nEn.labelScanAction));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10nEn.labelScanCamera));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.widgetWithText(SnackBarAction, l10nEn.customMealBarcodeScanButton),
+      findsOneWidget,
+    );
+  });
+
+  group('barcode check digit on save', () {
+    Future<void> saveWithBarcode(WidgetTester tester, String code) async {
+      final meal = MealEntity.empty();
+      await pumpEditMeal(
+        tester,
+        EditMealScreenArguments(
+          DateTime(2026, 10, 19),
+          meal,
+          IntakeTypeEntity.snack,
+          false,
+          barcode: code,
+        ),
+      );
+      await tester.enterText(
+        find.descendant(
+          of: find.ancestor(
+            of: find.text(l10nEn.mealNameLabel),
+            matching: find.byType(TextFormField),
+          ),
+          matching: find.byType(TextField),
+        ),
+        'Studenten-Futter',
+      );
+      await tester.tap(find.text(l10nEn.buttonSaveLabel));
+      await tester.pumpAndSettle();
+    }
+
+    for (final code in ['40084016', '036000291453', '14056489123459']) {
+      testWidgets('rejects $code, whose last digit does not match', (
+        tester,
+      ) async {
+        await saveWithBarcode(tester, code);
+
+        expect(find.text(l10nEn.barcodeInvalidCheckDigit), findsOneWidget);
+      });
+    }
+
+    for (final code in ['40084015', '036000291452', '20697112']) {
+      testWidgets('accepts $code', (tester) async {
+        await saveWithBarcode(tester, code);
+
+        expect(find.text(l10nEn.barcodeInvalidCheckDigit), findsNothing);
+        expect(find.text(l10nEn.customMealBarcodeInvalid), findsNothing);
+      });
+    }
+  });
 }
 
 OcrLine _line(String text, double y) =>
