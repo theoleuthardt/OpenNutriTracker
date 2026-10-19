@@ -127,6 +127,14 @@ void main() {
       }),
       throwsFormatException,
     );
+    expect(
+      () => BodyMeasurement.fromJson(const {
+        'id': ' ',
+        'date': '2026-10-01T00:00:00.000',
+        'waistCm': 80,
+      }),
+      throwsFormatException,
+    );
   });
 
   test('an unreadable stored entry is skipped', () async {

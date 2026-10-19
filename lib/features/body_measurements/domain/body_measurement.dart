@@ -20,6 +20,9 @@ class BodyMeasurement extends Equatable {
     required Map<BodyMeasureKind, double> valuesCm,
     this.note,
   }) : valuesCm = Map.unmodifiable(valuesCm) {
+    if (id.trim().isEmpty) {
+      throw ArgumentError.value(id, 'id', 'must not be blank');
+    }
     if (valuesCm.isEmpty) {
       throw ArgumentError.value(valuesCm, 'valuesCm', 'needs one measure');
     }
@@ -56,7 +59,11 @@ class BodyMeasurement extends Equatable {
       }
       values[kind] = value.toDouble();
     }
-    if (id is! String || date == null || values.isEmpty || note is! String?) {
+    if (id is! String ||
+        id.trim().isEmpty ||
+        date == null ||
+        values.isEmpty ||
+        note is! String?) {
       throw FormatException('invalid body measurement: $json');
     }
     return BodyMeasurement(id: id, date: date, valuesCm: values, note: note);
