@@ -46,8 +46,6 @@ class WaterProgressBar extends StatelessWidget {
                   Expanded(
                     child: Text(
                       S.of(context).waterChipLabel(currentMl, goalMl),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: textTheme.labelLarge?.copyWith(
                         color: palette.textStrong,
                         fontWeight: FontWeight.w700,

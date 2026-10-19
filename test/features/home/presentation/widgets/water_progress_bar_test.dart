@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:opennutritracker/features/home/presentation/widgets/water_progress_bar.dart';
@@ -87,5 +88,13 @@ void main() {
     );
 
     expect(tester.takeException(), isNull);
+    final label = tester.renderObject<RenderParagraph>(
+      find.text('12500 / 10000 ml'),
+    );
+    expect(
+      label.didExceedMaxLines,
+      isFalse,
+      reason: 'both amounts stay readable',
+    );
   });
 }
