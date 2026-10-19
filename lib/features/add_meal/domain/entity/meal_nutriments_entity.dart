@@ -271,8 +271,8 @@ class MealNutrimentsEntity extends Equatable {
         (offNutriments.biotin_100g as Object?).asDoubleOrNull(),
       ),
       folate100: _gToUg(
-        ((offNutriments.vitamin_b9_100g ?? offNutriments.folates_100g) as Object?)
-            .asDoubleOrNull(),
+        (offNutriments.vitamin_b9_100g as Object?).asDoubleOrNull() ??
+            (offNutriments.folates_100g as Object?).asDoubleOrNull(),
       ),
       iodine100: _gToUg(
         (offNutriments.iodine_100g as Object?).asDoubleOrNull(),

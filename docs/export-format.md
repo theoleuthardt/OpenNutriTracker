@@ -184,8 +184,9 @@ pantothenic acid (B5), copper and manganese, micrograms for vitamin K,
 biotin, folate, iodine and selenium. They are null in older bundles and
 read as unknown; they were never written in raw grams, so the
 `dataVersion` scaling below leaves them alone. Builds up to 2.3.0 wrote
-Open Food Facts rows with those fields in the raw grams the API sends — a thousand times too small for
-the milligram fields, a million for the microgram ones
+Open Food Facts rows with the older fields (cholesterol, the minerals and
+vitamins A, C, D, B6, B12 and niacin) in the raw grams the API sends — a
+thousand times too small for the milligram fields, a million for the microgram ones
 ([#775](https://github.com/simonoppowa/OpenNutriTracker/pull/775)).
 
 `dataVersion` on the meal (and the `meal_data_version` column in the CSV) is

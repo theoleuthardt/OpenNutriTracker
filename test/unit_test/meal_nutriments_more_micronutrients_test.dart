@@ -113,6 +113,19 @@ void main() {
       );
     });
 
+    test('folate falls back to folates_100g when vitamin-b9 is no number', () {
+      final dto = OFFProductNutrimentsDTO.fromJson({
+        'energy-kcal_100g': 100,
+        'vitamin-b9_100g': 'n/a',
+        'folates_100g': 0.0001,
+      });
+
+      expect(
+        MealNutrimentsEntity.fromOffNutriments(dto).folate100,
+        closeTo(100, 1e-9),
+      );
+    });
+
     test('a product without them reads as unknown', () {
       final n = MealNutrimentsEntity.fromOffNutriments(
         OFFProductNutrimentsDTO.fromJson({'energy-kcal_100g': 100}),
