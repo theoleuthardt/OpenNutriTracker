@@ -13,12 +13,16 @@ import 'package:opennutritracker/core/styles/dimens.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/core/utils/navigation_options.dart';
 import 'package:opennutritracker/core/utils/shared_payload_router.dart';
+import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 import 'package:opennutritracker/features/add_meal/presentation/add_meal_type.dart';
+import 'package:opennutritracker/features/edit_meal/presentation/edit_meal_screen.dart';
 import 'package:opennutritracker/features/home/presentation/screens/import_activity_scanner_screen.dart';
 import 'package:opennutritracker/features/home/presentation/screens/import_meal_scanner_screen.dart';
 import 'package:opennutritracker/features/meal_detail/meal_detail_screen.dart';
 import 'package:opennutritracker/features/recipes/presentation/screens/import_recipe_scanner_screen.dart';
+import 'package:opennutritracker/features/scanner/domain/store_barcode_check.dart';
 import 'package:opennutritracker/features/scanner/presentation/scanner_bloc.dart';
+import 'package:opennutritracker/features/scanner/presentation/widgets/store_product_confirm_dialog.dart';
 import 'package:opennutritracker/features/scanner/util/barcode_check_digit.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
@@ -120,7 +124,7 @@ class _ScannerScreenState extends State<ScannerScreen>
           // Push new route after build
           if (!_navigatedAfterLoad) {
             _navigatedAfterLoad = true;
-            Future.microtask(() {
+            Future.microtask(() async {
               if (!context.mounted) return;
               if (_pickMode) {
                 // Recipe ingredient picker — hand the loaded MealEntity back
@@ -129,6 +133,13 @@ class _ScannerScreenState extends State<ScannerScreen>
                 Navigator.of(context).pop(state.product);
                 return;
               }
+              if (await _openOwnFoodUnlessConfirmed(
+                state.product,
+                state.usesImperialUnits,
+              )) {
+                return;
+              }
+              if (!context.mounted) return;
               Navigator.of(context).pushReplacementNamed(
                 NavigationOptions.mealDetailRoute,
                 arguments: MealDetailScreenArguments(
@@ -157,6 +168,38 @@ class _ScannerScreenState extends State<ScannerScreen>
         return const SizedBox();
       },
     );
+  }
+
+  /// For a product found under a store-internal code that the user has not
+  /// confirmed yet, asks whether it is the scanned one (#83). On no, opens a
+  /// new own food with that code and the table scan instead, and returns
+  /// true; the own food then wins the next scan of the code.
+  Future<bool> _openOwnFoodUnlessConfirmed(
+    MealEntity product,
+    bool usesImperialUnits,
+  ) async {
+    final code = product.code;
+    if (code == null || !isStoreInternalBarcode(code)) return false;
+    final check = locator<StoreBarcodeCheck>();
+    if (!await check.needsConfirmation(product)) return false;
+    if (!mounted) return true;
+    if (await showStoreProductConfirmDialog(context, product)) {
+      await check.confirm(code);
+      return false;
+    }
+    if (!mounted) return true;
+    Navigator.of(context).pushReplacementNamed(
+      NavigationOptions.editMealRoute,
+      arguments: EditMealScreenArguments(
+        _day!,
+        MealEntity.empty(),
+        _intakeTypeEntity!,
+        usesImperialUnits,
+        barcode: code,
+        scanLabelOnOpen: true,
+      ),
+    );
+    return true;
   }
 
   Scaffold _getScannerContent(BuildContext context) {
