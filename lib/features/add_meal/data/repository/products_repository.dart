@@ -4,6 +4,7 @@ import 'package:logging/logging.dart';
 import 'package:opennutritracker/core/utils/off_country.dart';
 import 'package:opennutritracker/features/add_meal/data/data_sources/off_data_source.dart';
 import 'package:opennutritracker/features/add_meal/data/data_sources/sp_food_data_source.dart';
+import 'package:opennutritracker/features/add_meal/domain/search/brand_query.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_portion_entity.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_nutriments_entity.dart';
@@ -30,12 +31,32 @@ class ProductsRepository {
   final OFFDataSource _offDataSource;
   final SpFoodDataSource _spBackendDataSource;
 
-  ProductsRepository(this._offDataSource, this._spBackendDataSource);
+  final Future<String?> Function() _countryTag;
 
+  /// [countryTag] gives the Open Food Facts country the search ranks up;
+  /// the device's country when not given (the fork passes its search
+  /// region, #41).
+  ProductsRepository(
+    this._offDataSource,
+    this._spBackendDataSource, {
+    Future<String?> Function()? countryTag,
+  }) : _countryTag =
+           countryTag ??
+           (() async => OffCountry.fromLocale(Platform.localeName));
+
+  /// A query naming a known brand or store (`BrandQuery`) first searches
+  /// that brand's products and falls back to the plain query when Open Food
+  /// Facts has none (#41).
   Future<List<MealEntity>> getOFFProductsByString(String searchString) async {
-    final offWordResponse = await _offDataSource.fetchSearchWordResults(
-      searchString,
-    );
+    final brands = BrandQuery.parse(searchString);
+    var offWordResponse = brands.hasBrands
+        ? await _offDataSource.fetchSearchWordResults(brands.offQuery)
+        : null;
+    if (offWordResponse == null || offWordResponse.products.isEmpty) {
+      offWordResponse = await _offDataSource.fetchSearchWordResults(
+        searchString,
+      );
+    }
 
     // The API returns hits in relevance order. Keep that as the relevance
     // signal, drop items without nutriments or that fail plausibility, then
@@ -45,7 +66,7 @@ class ProductsRepository {
     // The country boost follows the device on purpose, not the language
     // picked in the app: a German speaker in Austria wants Austrian
     // products ranked up. Food-name language is AppLocale's job (#1214).
-    final userCountryTag = OffCountry.fromLocale(Platform.localeName);
+    final userCountryTag = await _countryTag();
     final candidates = <_RankedOffProduct>[];
     for (var i = 0; i < offWordResponse.products.length; i++) {
       final dto = offWordResponse.products[i];
