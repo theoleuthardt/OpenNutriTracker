@@ -3,10 +3,10 @@ import 'package:opennutritracker/features/add_meal/data/dto/sp/sp_const.dart';
 import 'package:opennutritracker/features/add_meal/data/dto/sp/sp_food_dto.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 
-MealEntity _bls(String code) => MealEntity.fromSpFood(
+MealEntity _bls(String code, {String name = 'x'}) => MealEntity.fromSpFood(
   SpFoodDTO(
     foodId: 1,
-    name: 'x',
+    name: name,
     source: SPConst.blsSourceCode,
     sourceCode: code,
   ),
@@ -26,6 +26,7 @@ void main() {
       ('M113200', 'H-Milch fettarm'),
       ('M150000', 'Buttermilch'),
       ('M130300', 'Kefir'),
+      ('M1A5200', 'H-Milch fettarm, laktosefrei'),
       ('N110000', 'Getränk (Gruppe N)'),
       ('P100000', 'alkoholisches Getränk (Gruppe P)'),
     ]) {
@@ -52,6 +53,21 @@ void main() {
         expect(_bls(code).mealUnit, 'g');
       });
     }
+  });
+
+  test('milk drinks of subgroup M2 are in ml, its yoghurts in g', () {
+    expect(_bls('M200200', name: 'Milk drink 1.5 % fat').mealUnit, 'ml');
+    expect(
+      _bls('M200200', name: 'Milchmischgetränk 1,5 % Fett').mealUnit,
+      'ml',
+    );
+    expect(_bls('M2H2300', name: 'Milkshake 3.5 % fat').mealUnit, 'ml');
+    expect(_bls('M2S8300', name: 'Ayran, yogurt drink, salted').mealUnit, 'ml');
+    expect(
+      _bls('M241300', name: 'Joghurt mild, mit Fruchtzubereitung').mealUnit,
+      'g',
+    );
+    expect(_bls('M2N6400', name: 'Cream yogurt sweetened').mealUnit, 'g');
   });
 
   test('the per-100 basis stays the same for liquids', () {

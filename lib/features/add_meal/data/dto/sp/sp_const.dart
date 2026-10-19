@@ -99,10 +99,11 @@ class SPConst {
   static const blsBeverageGroups = {'N', 'P'};
 
   /// BLS code prefixes of liquids outside the beverage groups (#104):
-  /// milk, kefir, buttermilk, whey and condensed milk, and the plant drinks
-  /// made from rice, oats, almonds and soya.
+  /// milk (lactose-free too), kefir, buttermilk, whey and condensed milk,
+  /// and the plant drinks made from rice, oats, almonds and soya.
   static const blsLiquidPrefixes = [
     'M11',
+    'M1A',
     'M13',
     'M15',
     'M16',
@@ -114,15 +115,28 @@ class SPConst {
     'H842',
   ];
 
+  /// Words that make a milk product of BLS subgroup M2 (which also holds
+  /// yoghurts and desserts) a drink, in German and English names.
+  static final _blsMilkDrinkWords = RegExp(
+    'getränk|drink|shake|trinkjoghurt|ayran|kefir|whey',
+  );
+
   /// Whether the BLS food [code] is measured in millilitres: the beverage
-  /// groups, the liquids in [blsLiquidPrefixes], and in the fruit group F
-  /// the juices, nectars and smoothies, whose fifth code character is 6
-  /// or 7 (concentrates and the fruit itself are not).
-  static bool isBlsLiquid(String code) {
+  /// groups, the liquids in [blsLiquidPrefixes], the milk drinks of
+  /// subgroup M2 (by one of [names]), and in the fruit group F the juices,
+  /// nectars and smoothies, whose fifth code character is 6 or 7
+  /// (concentrates and the fruit itself are not).
+  static bool isBlsLiquid(String code, {List<String?> names = const []}) {
     final upper = code.toUpperCase();
     if (upper.isEmpty) return false;
     if (blsBeverageGroups.contains(upper[0])) return true;
     if (blsLiquidPrefixes.any(upper.startsWith)) return true;
+    if (upper.startsWith('M2')) {
+      return names.any(
+        (name) =>
+            name != null && _blsMilkDrinkWords.hasMatch(name.toLowerCase()),
+      );
+    }
     return upper.length > 4 && upper[0] == 'F' && '67'.contains(upper[4]);
   }
 

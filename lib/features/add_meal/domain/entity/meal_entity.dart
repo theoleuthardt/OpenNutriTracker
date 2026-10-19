@@ -470,7 +470,10 @@ class MealEntity extends Equatable {
     final sourceCode = foodItem.sourceCode;
     if (foodItem.source == SPConst.blsSourceCode &&
         sourceCode != null &&
-        SPConst.isBlsLiquid(sourceCode)) {
+        SPConst.isBlsLiquid(
+          sourceCode,
+          names: [foodItem.name, foodItem.localizedName],
+        )) {
       return 'ml';
     }
     return 'g';
