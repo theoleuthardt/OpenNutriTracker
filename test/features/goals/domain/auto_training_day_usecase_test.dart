@@ -133,6 +133,45 @@ void main() {
     expect(added.added, hasLength(1));
     expect(setDayType.calls, [(tuesday, DayType.training)]);
   });
+
+  test('a failed switch does not fail the saved activity', () async {
+    final added = _FakeAddUserActivityUsecase();
+    final log = TrainingAwareLogUserActivityUsecase(
+      added,
+      _FakeAddTrackedDayUsecase(),
+      _UnusedKcalGoal(),
+      _UnusedMacroGoal(),
+      AutoTrainingDayUsecase(
+        _FakeConfigRepository(
+          const TrainingPlan(
+            trainingTargets: trainingTargets,
+            autoTrainingDay: AutoTrainingDay.automatic,
+          ),
+        ),
+        _FailingSetDayTypeUsecase(),
+        onSwitched: () {},
+      ),
+    );
+
+    await log.logActivity(
+      UserActivityEntity(
+        'run',
+        30,
+        320,
+        tuesday,
+        PhysicalActivityFixtures.moderateBicycling,
+      ),
+      day: tuesday,
+    );
+
+    expect(added.added, hasLength(1));
+  });
+}
+
+class _FailingSetDayTypeUsecase extends Fake implements SetDayTypeUsecase {
+  @override
+  Future<void> setDayType(DateTime day, DayType type) async =>
+      throw StateError('disk full');
 }
 
 class _UnusedKcalGoal extends Fake implements GetKcalGoalUsecase {}

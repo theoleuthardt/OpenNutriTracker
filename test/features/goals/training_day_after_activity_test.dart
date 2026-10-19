@@ -9,7 +9,7 @@ import 'package:opennutritracker/generated/l10n.dart';
 import '../../helpers/test_l10n.dart';
 
 class _FakeAutoTrainingDay extends Fake implements AutoTrainingDayUsecase {
-  final AutoTrainingDayDecision decision;
+  AutoTrainingDayDecision decision;
   final switched = <DateTime>[];
 
   _FakeAutoTrainingDay(this.decision);
@@ -81,5 +81,16 @@ void main() {
 
     expect(usecase.switched, isEmpty);
     expect(find.byType(SnackBar), findsNothing);
+  });
+
+  testWidgets('a day set by hand meanwhile is not switched', (tester) async {
+    final usecase = _FakeAutoTrainingDay(AutoTrainingDayDecision.suggest);
+    await offer(tester, usecase);
+
+    usecase.decision = AutoTrainingDayDecision.none;
+    await tester.tap(find.text(l10nEn.trainingDaySuggestionAction));
+    await tester.pumpAndSettle();
+
+    expect(usecase.switched, isEmpty);
   });
 }
