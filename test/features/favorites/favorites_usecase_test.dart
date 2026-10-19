@@ -178,4 +178,39 @@ void main() {
 
     expect((await favorites.list()).map((e) => e.id), ['meal:off:a']);
   });
+
+  test('favourite meals filter by name or brand and include recipes', () async {
+    await favorites.toggleMeal(_meal('a'));
+    await recipes.saveRecipe(_recipe('r1'));
+    await favorites.toggleRecipe(_recipe('r1'));
+
+    expect((await favorites.favoriteMeals()).map((m) => m.name), [
+      'Skyr a',
+      'Overnight oats',
+    ]);
+    expect((await favorites.favoriteMeals(query: 'OATS')).map((m) => m.name), [
+      'Overnight oats',
+    ]);
+    expect((await favorites.favoriteMeals(query: 'arla')).map((m) => m.name), [
+      'Skyr a',
+    ]);
+  });
+
+  test('a recipe listed as a meal counts as a favourite', () async {
+    await recipes.saveRecipe(_recipe('r1'));
+    await favorites.toggleRecipe(_recipe('r1'));
+
+    expect(favorites.isMealFavorite(_recipe('r1').toMealEntity()), isTrue);
+  });
+
+  test('favourites move to the front, the rest keeps its order', () async {
+    await favorites.toggleMeal(_meal('c'));
+
+    expect(
+      favorites
+          .favoritesFirst([_meal('a'), _meal('b'), _meal('c')])
+          .map((m) => m.code),
+      ['c', 'a', 'b'],
+    );
+  });
 }

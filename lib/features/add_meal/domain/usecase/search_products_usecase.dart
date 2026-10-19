@@ -8,6 +8,7 @@ import 'package:opennutritracker/core/domain/usecase/get_config_usecase.dart';
 import 'package:opennutritracker/core/domain/usecase/get_intake_usecase.dart';
 import 'package:opennutritracker/features/add_meal/data/repository/products_repository.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
+import 'package:opennutritracker/features/favorites/domain/favorites_usecase.dart';
 
 /// Output of a product/food search. [meals] is the deduplicated list shown
 /// to the user (custom-meal matches first, then remote results).
@@ -34,15 +35,18 @@ class SearchProductsUseCase {
   final RemoteSearchCacheDataSource _cachedOffMealDataSource;
   final RecipeDataSource _recipeDataSource;
   final GetConfigUsecase _getConfigUsecase;
+  final FavoritesUsecase? _favoritesUsecase;
 
+  /// With [favorites], matching favourites lead every result list (#39).
   SearchProductsUseCase(
     this._productsRepository,
     this._getIntakeUsecase,
     this._customMealDataSource,
     this._cachedOffMealDataSource,
     this._recipeDataSource,
-    this._getConfigUsecase,
-  );
+    this._getConfigUsecase, {
+    FavoritesUsecase? favorites,
+  }) : _favoritesUsecase = favorites;
 
   /// [skipRemote] limits the search to local matches (custom meals, recipes,
   /// recent intake, cached results) and does not touch the network — used for
@@ -235,16 +239,40 @@ class SearchProductsUseCase {
     // keeps the search list stable from the user's perspective ("the
     // version I saw yesterday is still at the top"). Fresh remote data
     // still wins on the per-item refresh path triggered by intake-add.
+    final meals = _deduplicateMeals([
+      ...fromCustomMealBox,
+      ...fromRecipes,
+      ...fromIntakeHistory,
+      ...fromCache,
+      ...remoteResults,
+    ]);
+    final favorites = _favoritesUsecase;
     return SearchProductsResult(
-      meals: _deduplicateMeals([
-        ...fromCustomMealBox,
-        ...fromRecipes,
-        ...fromIntakeHistory,
-        ...fromCache,
-        ...remoteResults,
-      ]),
+      meals: favorites == null
+          ? meals
+          : _favoritesFirst(
+              meals,
+              await favorites.favoriteMeals(query: normalizedSearchString),
+            ),
       remoteSourceEmpty: remoteSourceEmpty,
     );
+  }
+
+  /// [meals] led by [favorites] in their list order. A favourite already in
+  /// [meals] keeps that (fresher) copy; one that is not comes from its
+  /// snapshot.
+  List<MealEntity> _favoritesFirst(
+    List<MealEntity> meals,
+    List<MealEntity> favorites,
+  ) {
+    final byKey = {for (final meal in meals) _dedupKey(meal): meal};
+    final favoriteKeys = [for (final meal in favorites) _dedupKey(meal)];
+    return [
+      for (final (index, key) in favoriteKeys.indexed)
+        byKey[key] ?? favorites[index],
+      for (final meal in meals)
+        if (!favoriteKeys.contains(_dedupKey(meal))) meal,
+    ];
   }
 
   bool _mealMatchesSearch(MealEntity meal, String normalizedSearchString) {
