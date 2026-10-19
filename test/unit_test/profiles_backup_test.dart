@@ -449,23 +449,36 @@ void main() {
   );
 
   test(
-    'replacing keeps fasting sessions, which the backup does not carry yet',
+    'fasting sessions travel per profile and replace those on the device',
     () async {
-      final archive = await exportFrom(await twoProfileDevice());
+      final source = await twoProfileDevice();
+      await source
+          .boxesOf('partner')
+          .fastingBox
+          .put(
+            'partner-fast',
+            FastingSessionDBO(
+              id: 'partner-fast',
+              startedAt: DateTime(2026, 10, 1, 20),
+              targetDurationMinutes: 960,
+            ),
+          );
+      final archive = await exportFrom(source);
       final device = await _Device.create();
       final active = await device.addProfile('me', makeActive: true);
       await active.fastingBox.put(
-        'f1',
+        'only-on-device',
         FastingSessionDBO(
-          id: 'f1',
-          startedAt: DateTime(2026, 10, 1, 20),
-          targetDurationMinutes: 960,
+          id: 'only-on-device',
+          startedAt: DateTime(2026, 9, 1, 20),
+          targetDurationMinutes: 720,
         ),
       );
 
       await importInto(device, archive, replaceExisting: true);
 
-      expect(active.fastingBox.length, 1);
+      expect(active.fastingBox.isEmpty, isTrue);
+      expect(device.boxesOf('partner').fastingBox.keys, ['partner-fast']);
     },
   );
 

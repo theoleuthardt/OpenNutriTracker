@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:archive/archive.dart';
 import 'package:opennutritracker/core/data/data_source/profile_data_source.dart';
 import 'package:opennutritracker/core/data/data_source/user_activity_dbo.dart';
+import 'package:opennutritracker/core/data/dbo/fasting_session_dbo.dart';
 import 'package:opennutritracker/core/data/dbo/intake_dbo.dart';
 import 'package:opennutritracker/core/data/dbo/profile_dbo.dart';
 import 'package:opennutritracker/core/data/dbo/tracked_day_dbo.dart';
@@ -61,6 +62,7 @@ class ProfilesBackup {
     weightLogFileName,
     goalSettingsFileName,
     PersonalBackupExtras.waterIntakeFileName,
+    PersonalBackupExtras.fastingSessionsFileName,
     PersonalBackupExtras.userProfileFileName,
   ];
 
@@ -237,14 +239,14 @@ class ProfilesBackup {
   }
 
   /// Clears the logs a restore replaces. The profile body data and the goals
-  /// stay: the restore overwrites them when the user asked for it. Fasting
-  /// sessions stay too until the backup carries them (#28).
+  /// stay: the restore overwrites them when the user asked for it.
   static Future<void> _clearProfileData(HiveDBProvider db) async {
     await db.intakeBox.clear();
     await db.userActivityBox.clear();
     await db.trackedDayBox.clear();
     await db.weightLogBox.clear();
     await db.waterIntakeBox.clear();
+    await db.fastingBox.clear();
   }
 
   /// A photo entry of a profile's folder export (an intake photo of that
@@ -299,6 +301,9 @@ class ProfilesBackup {
         rows(
           read(PersonalBackupExtras.waterIntakeFileName),
         ).forEach(WaterIntakeDBO.fromJson);
+        rows(
+          read(PersonalBackupExtras.fastingSessionsFileName),
+        ).forEach(FastingSessionDBO.fromJson);
         final goals = read(goalSettingsFileName);
         if (goals != null) {
           GoalSettingsBackup.fromJson(goals as Map<String, dynamic>);
