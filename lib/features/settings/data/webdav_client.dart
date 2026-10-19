@@ -28,16 +28,26 @@ class WebDavClient {
     caseSensitive: false,
   );
 
+  /// Long enough for a backup with photos over a slow uplink; a server that
+  /// stops answering must not hold every later backup up.
+  static const defaultTimeout = Duration(seconds: 120);
+
   final http.Client _client;
   final Uri _folder;
   final String _authorization;
+  final Duration _timeout;
 
   /// [folder] must be an `https` URL; a trailing slash is added when it is
   /// missing.
-  WebDavClient(this._client, {required Uri folder, required String token})
-    : _folder = _asFolder(folder),
-      _authorization =
-          'Basic ${base64Encode(utf8.encode('$_userName:$token'))}';
+  WebDavClient(
+    this._client, {
+    required Uri folder,
+    required String token,
+    Duration timeout = defaultTimeout,
+  }) : _timeout = timeout,
+       _folder = _asFolder(folder),
+       _authorization =
+           'Basic ${base64Encode(utf8.encode('$_userName:$token'))}';
 
   static Uri _asFolder(Uri folder) {
     if (folder.scheme != 'https' || folder.host.isEmpty) {
@@ -124,9 +134,10 @@ class WebDavClient {
             '<d:resourcetype/></d:prop></d:propfind>';
 
   Future<http.Response> _send(http.BaseRequest request, String what) async {
-    final response = await http.Response.fromStream(
-      await _client.send(request),
-    );
+    final response = await _client
+        .send(request)
+        .then(http.Response.fromStream)
+        .timeout(_timeout);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw WebDavException('Could not $what', statusCode: response.statusCode);
     }

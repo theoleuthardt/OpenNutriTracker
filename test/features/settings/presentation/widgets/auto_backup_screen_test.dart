@@ -155,6 +155,9 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('Import'));
     await tester.pumpAndSettle();
+    expect(find.text('Replace all data?'), findsOneWidget);
+    await tester.tap(find.text('Replace'));
+    await tester.pumpAndSettle();
 
     expect(service.downloaded, ['nutritracker-backup-20261018-093000.zip']);
     expect(restores, [true]);
@@ -171,6 +174,25 @@ void main() {
       find.text('There are no backups on the server yet.'),
       findsOneWidget,
     );
+    expect(restores, isEmpty);
+  });
+
+  testWidgets('cancelling the replace question restores nothing', (
+    tester,
+  ) async {
+    service.backups = ['nutritracker-backup-20261019-093000.zip'];
+    await pumpScreen(tester);
+    await fillIn(tester, folder: 'https://files.example.org/dav/nutri/');
+
+    await tapButton(tester, 'auto-backup-restore');
+    await tester.tap(find.bySemanticsIdentifier('auto-backup-restore-replace'));
+    await tester.pump();
+    await tester.tap(find.text('Import'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('CANCEL'));
+    await tester.pumpAndSettle();
+
+    expect(service.downloaded, isEmpty);
     expect(restores, isEmpty);
   });
 }

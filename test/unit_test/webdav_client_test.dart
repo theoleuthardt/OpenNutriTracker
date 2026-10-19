@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -130,5 +131,16 @@ void main() {
       ),
       throwsArgumentError,
     );
+  });
+
+  test('gives up on a server that stops answering', () async {
+    final client = WebDavClient(
+      MockClient((_) => Completer<http.Response>().future),
+      folder: folder,
+      token: 't',
+      timeout: const Duration(milliseconds: 20),
+    );
+
+    await expectLater(client.list(), throwsA(isA<TimeoutException>()));
   });
 }

@@ -60,7 +60,7 @@ class AutoBackupService {
       _running ??= _upload().whenComplete(() => _running = null);
 
   Future<AutoBackupOutcome> _upload() async {
-    var settings = await _store.load();
+    final settings = await _store.load();
     if (!settings.isConfigured) return AutoBackupOutcome.disabled;
     final client = _httpClient();
     try {
@@ -71,20 +71,28 @@ class AutoBackupService {
       await webDav.ensureFolder();
       await webDav.put('nutritracker-backup-${_stamp.format(now)}.zip', bytes);
       await _rotate(webDav, settings.keepCount);
-      settings = settings.copyWith(lastSuccessAt: now, clearLastError: true);
-      await _store.save(settings);
+      await _saveStatus(
+        (fresh) => fresh.copyWith(lastSuccessAt: now, clearLastError: true),
+      );
       await _reminder.markBackedUp();
       return AutoBackupOutcome.uploaded;
     } catch (error, stackTrace) {
       _log.warning('Automatic backup failed', error, stackTrace);
-      await _store.save(
-        settings.copyWith(lastErrorAt: _clock(), lastError: describe(error)),
+      await _saveStatus(
+        (fresh) =>
+            fresh.copyWith(lastErrorAt: _clock(), lastError: describe(error)),
       );
       return AutoBackupOutcome.failed;
     } finally {
       client.close();
     }
   }
+
+  /// Writes the outcome into the settings as they are now, not as they were
+  /// when the upload started, so a change made meanwhile survives.
+  Future<void> _saveStatus(
+    AutoBackupSettings Function(AutoBackupSettings fresh) update,
+  ) async => _store.save(update(await _store.load()));
 
   Future<void> _rotate(WebDavClient webDav, int keepCount) async {
     final backups =

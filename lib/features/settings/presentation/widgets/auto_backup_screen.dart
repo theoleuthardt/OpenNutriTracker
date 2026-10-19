@@ -122,11 +122,27 @@ class _AutoBackupScreenState extends State<AutoBackupScreen> {
     );
   }
 
+  /// Applies [change] to the stored settings as they are now (an upload may
+  /// have written its status meanwhile) and shows the result.
+  Future<void> _update(
+    AutoBackupSettings Function(AutoBackupSettings fresh) change,
+  ) async {
+    final updated = change(await _store.load());
+    await _store.save(updated);
+    if (mounted) setState(() => _settings = updated);
+  }
+
   Future<bool> _save() async {
-    final settings = _fromForm();
-    if (settings == null) return false;
-    await _store.save(settings);
-    setState(() => _settings = settings);
+    final form = _fromForm();
+    if (form == null) return false;
+    await _update(
+      (fresh) => fresh.copyWith(
+        folderUrl: form.folderUrl,
+        token: form.token,
+        password: form.password,
+        clearPassword: form.password == null,
+      ),
+    );
     return true;
   }
 
@@ -201,7 +217,8 @@ class _AutoBackupScreenState extends State<AutoBackupScreen> {
       context: context,
       builder: (_) => _RestorePicker(names: available),
     );
-    if (choice == null) return;
+    if (choice == null || !mounted) return;
+    if (choice.replace && !await _confirmReplace()) return;
     await _withBusy(() async {
       try {
         final archive = await _service.download(choice.name);
@@ -212,6 +229,27 @@ class _AutoBackupScreenState extends State<AutoBackupScreen> {
         _show(l10n.autoBackupRestoreFailed);
       }
     });
+  }
+
+  Future<bool> _confirmReplace() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(S.of(dialogContext).exportImportReplaceConfirmTitle),
+        content: Text(S.of(dialogContext).exportImportReplaceConfirmContent),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(S.of(dialogContext).dialogCancelLabel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(S.of(dialogContext).exportImportReplaceConfirmAction),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
   }
 
   @override
@@ -241,11 +279,8 @@ class _AutoBackupScreenState extends State<AutoBackupScreen> {
                     contentPadding: EdgeInsets.zero,
                     title: Text(l10n.autoBackupEnabledLabel),
                     value: settings.enabled,
-                    onChanged: (value) async {
-                      final updated = settings.copyWith(enabled: value);
-                      await _store.save(updated);
-                      setState(() => _settings = updated);
-                    },
+                    onChanged: (value) =>
+                        _update((fresh) => fresh.copyWith(enabled: value)),
                   ),
                 ),
                 Semantics(
@@ -292,11 +327,8 @@ class _AutoBackupScreenState extends State<AutoBackupScreen> {
                   value: settings.intervalHours,
                   options: _intervalOptions,
                   optionLabel: l10n.autoBackupIntervalHours,
-                  onChanged: (value) async {
-                    final updated = settings.copyWith(intervalHours: value);
-                    await _store.save(updated);
-                    setState(() => _settings = updated);
-                  },
+                  onChanged: (value) =>
+                      _update((fresh) => fresh.copyWith(intervalHours: value)),
                 ),
                 _OptionRow(
                   identifier: 'auto-backup-keep',
@@ -304,11 +336,8 @@ class _AutoBackupScreenState extends State<AutoBackupScreen> {
                   value: settings.keepCount,
                   options: _keepOptions,
                   optionLabel: l10n.autoBackupKeepCount,
-                  onChanged: (value) async {
-                    final updated = settings.copyWith(keepCount: value);
-                    await _store.save(updated);
-                    setState(() => _settings = updated);
-                  },
+                  onChanged: (value) =>
+                      _update((fresh) => fresh.copyWith(keepCount: value)),
                 ),
                 const SizedBox(height: 8),
                 Text(

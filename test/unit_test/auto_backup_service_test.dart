@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:archive/archive.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +16,7 @@ class _FakeServer {
   bool folderExists = true;
   int? failWith;
   final methods = <String>[];
+  Future<void> Function()? onPut;
 
   http.Client client() => MockClient((request) async {
     methods.add(request.method);
@@ -36,6 +39,7 @@ class _FakeServer {
         folderExists = true;
         return http.Response('', 201);
       case 'PUT':
+        await onPut?.call();
         files[name] = request.bodyBytes;
         return http.Response('', 201);
       case 'GET':
@@ -209,5 +213,32 @@ void main() {
 
     expect(stored.keys, ['AutoBackupSettings']);
     expect(stored.values.single, contains('token'));
+  });
+
+  test('a settings change made during an upload survives it', () async {
+    server.onPut = () async =>
+        store.save((await store.load()).copyWith(enabled: false, keepCount: 3));
+
+    await service.runNow();
+
+    final after = await store.load();
+    expect(after.enabled, isFalse);
+    expect(after.keepCount, 3);
+    expect(after.lastSuccessAt, now);
+  });
+
+  test('a stalled server is stored as unreachable', () async {
+    final stalled = AutoBackupService(
+      store,
+      () async => bundle(),
+      reminder,
+      httpClient: () => MockClient((request) async {
+        throw TimeoutException('stalled');
+      }),
+      clock: () => now,
+    );
+
+    expect(await stalled.runNow(), AutoBackupOutcome.failed);
+    expect((await store.load()).lastError, 'unreachable');
   });
 }
