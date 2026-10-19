@@ -37,10 +37,10 @@ class ConvertRowsTest(unittest.TestCase):
         self.assertAlmostEqual(value(asset, 0, "copper100"), 0.40961)
         self.assertIsNone(value(asset, 0, "fat100"), "no FAT column means null, not 0")
 
-    def test_falls_back_to_the_next_component(self):
+    def test_vitamin_a_takes_only_rae(self):
         asset = convert_rows(HEADER, [["X1", "a", "a", 1, None, 7, None, None]])
 
-        self.assertEqual(value(asset, 0, "vitaminA100"), 7)
+        self.assertIsNone(value(asset, 0, "vitaminA100"), "RE is no stand-in for RAE")
         self.assertIsNone(value(asset, 0, "vitaminB6100"))
 
     def test_skips_rows_without_code_and_lists_every_field(self):

@@ -32,8 +32,9 @@ LICENSE = "CC BY 4.0, https://creativecommons.org/licenses/by/4.0/"
 
 # App field -> (BLS component codes in priority order, unit factor to the
 # app's unit). The first 23 match MealNutrimentsDBO and the backend mapping
-# (trans fat has no BLS component); the rest are the extra micronutrients
-# the app adds later (#50).
+# (trans fat has no BLS component), except that vitamin A takes only RAE:
+# RE weighs carotenoids differently, so it is no stand-in. The rest are the
+# extra micronutrients the app adds later (#50).
 MAPPING = [
     ("energyKcal100", ["ENERCC"], 1),
     ("carbohydrates100", ["CHO"], 1),
@@ -52,7 +53,7 @@ MAPPING = [
     ("iron100", ["FE"], 1),
     ("zinc100", ["ZN"], 1),
     ("phosphorus100", ["P"], 1),
-    ("vitaminA100", ["VITAA", "VITA"], 1),
+    ("vitaminA100", ["VITAA"], 1),
     ("vitaminC100", ["VITC"], 1),
     ("vitaminD100", ["VITD"], 1),
     ("vitaminB6100", ["VITB6"], 0.001),
@@ -139,8 +140,10 @@ def main(source, target):
     asset = convert_rows(header, rows)
     data = json.dumps(asset, ensure_ascii=False, separators=(",", ":"))
     Path(target).parent.mkdir(parents=True, exist_ok=True)
-    with gzip.open(target, "wt", encoding="utf-8", compresslevel=9) as out:
-        out.write(data)
+    with open(target, "wb") as raw, gzip.GzipFile(
+        fileobj=raw, mode="wb", compresslevel=9, mtime=0
+    ) as out:
+        out.write(data.encode("utf-8"))
     print(f"{len(asset['foods'])} foods, {len(data) // 1024} KiB JSON -> {target}")
 
 
