@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -100,12 +99,11 @@ class OffContributionClient {
           'Basic ${base64Encode(utf8.encode('off:off'))}';
     }
     try {
-      return await http.Response.fromStream(
-        await _client.send(request).timeout(_timeout),
-      );
-    } on http.ClientException {
-      throw const OffContributionException(OffContributionFailure.offline);
-    } on TimeoutException {
+      return await _client
+          .send(request)
+          .then(http.Response.fromStream)
+          .timeout(_timeout);
+    } on Exception {
       throw const OffContributionException(OffContributionFailure.offline);
     }
   }

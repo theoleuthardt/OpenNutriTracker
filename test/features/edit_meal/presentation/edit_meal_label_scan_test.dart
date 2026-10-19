@@ -299,11 +299,12 @@ void main() {
     );
   });
 
-  testWidgets('saving a scanned food with a barcode offers the upload', (
-    tester,
+  Future<void> scanAndSave(
+    WidgetTester tester,
+    String barcode,
+    List<(String, double?)> offers,
   ) async {
     registerScanner(label);
-    final offers = <(String, double?)>[];
     getIt.registerLazySingleton<OffContributionFlow>(
       () => _RecordingFlow(offers),
     );
@@ -314,7 +315,7 @@ void main() {
         MealEntity.empty(),
         IntakeTypeEntity.snack,
         false,
-        barcode: '20697112',
+        barcode: barcode,
         scanLabelOnOpen: true,
       ),
     );
@@ -333,8 +334,25 @@ void main() {
     await tester.tap(find.text(l10nEn.buttonSaveLabel));
     await tester.pumpAndSettle();
 
-    expect(offers, [('20697112', 250.0)]);
     expect(find.text('meal-detail'), findsOneWidget);
+  }
+
+  testWidgets('saving a scanned food with a barcode offers the upload', (
+    tester,
+  ) async {
+    final offers = <(String, double?)>[];
+    await scanAndSave(tester, '4056489123453', offers);
+
+    expect(offers, [('4056489123453', 250.0)]);
+  });
+
+  testWidgets('a store-internal code is never offered for upload', (
+    tester,
+  ) async {
+    final offers = <(String, double?)>[];
+    await scanAndSave(tester, '20697112', offers);
+
+    expect(offers, isEmpty);
   });
 
   group('barcode check digit on save', () {

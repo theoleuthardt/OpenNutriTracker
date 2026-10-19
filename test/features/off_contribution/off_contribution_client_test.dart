@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -186,6 +187,26 @@ void main() {
           _settings,
           OffNutritionUpload.fromNutriments('20697112', _nutriments),
         ),
+        throwsA(
+          isA<OffContributionException>().having(
+            (e) => e.failure,
+            'failure',
+            OffContributionFailure.offline,
+          ),
+        ),
+      );
+    });
+
+    test('a TLS or socket failure is reported as offline', () async {
+      final client = OffContributionClient(
+        userAgent: 'NutriTracker/1.0 (test)',
+        client: MockClient(
+          (_) async => throw const HandshakeException('bad certificate'),
+        ),
+      );
+
+      await expectLater(
+        client.hasNutritionValues(_settings, '20697112'),
         throwsA(
           isA<OffContributionException>().having(
             (e) => e.failure,

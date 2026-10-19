@@ -50,8 +50,8 @@ class _OffContributionScreenState extends State<OffContributionScreen> {
       userId: _userId.text.trim(),
       password: _password.text,
     );
+    setState(() => _settings = updated);
     await _store.save(updated);
-    if (mounted) setState(() => _settings = updated);
   }
 
   @override

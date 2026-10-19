@@ -119,7 +119,8 @@ class _EditMealScreenState extends State<EditMealScreen> {
   bool _scanningLabel = false;
 
   /// Whether the values came from a table scan, which is when saving offers
-  /// to send them to Open Food Facts (#81).
+  /// to send them to Open Food Facts (#81) – except for store-internal
+  /// codes, which name other products in other shops (#83).
   bool _labelScanned = false;
 
   @override
@@ -1104,7 +1105,9 @@ class _EditMealScreenState extends State<EditMealScreen> {
       }
 
       if (!mounted) return;
-      if (_labelScanned && rawBarcode.isNotEmpty) {
+      if (_labelScanned &&
+          rawBarcode.isNotEmpty &&
+          !isStoreInternalBarcode(rawBarcode)) {
         await locator<OffContributionFlow>()
             .offer(context, rawBarcode, newMealEntity.nutriments);
         if (!mounted) return;
