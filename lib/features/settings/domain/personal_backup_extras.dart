@@ -64,6 +64,8 @@ class PersonalBackupExtras {
     'scannerPortraitLock',
     'foodSourceToggles',
     'defaultToRawFoodUnits',
+    'lastBackupAt',
+    'backupReminderDays',
   ];
 
   final WaterIntakeRepository _waterIntakeRepository;
