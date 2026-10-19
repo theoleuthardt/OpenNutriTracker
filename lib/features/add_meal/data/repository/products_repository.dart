@@ -4,6 +4,7 @@ import 'package:logging/logging.dart';
 import 'package:opennutritracker/core/utils/off_country.dart';
 import 'package:opennutritracker/features/add_meal/data/data_sources/off_data_source.dart';
 import 'package:opennutritracker/features/add_meal/data/data_sources/sp_food_data_source.dart';
+import 'package:opennutritracker/features/add_meal/data/dto/off/off_word_response_dto.dart';
 import 'package:opennutritracker/features/add_meal/domain/search/brand_query.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_portion_entity.dart';
@@ -46,18 +47,29 @@ class ProductsRepository {
 
   /// A query naming a known brand or store (`BrandQuery`) first searches
   /// that brand's products and falls back to the plain query when Open Food
-  /// Facts has none (#41).
+  /// Facts has no usable one (#41).
   Future<List<MealEntity>> getOFFProductsByString(String searchString) async {
+    final userCountryTag = await _countryTag();
     final brands = BrandQuery.parse(searchString);
-    var offWordResponse = brands.hasBrands
-        ? await _offDataSource.fetchSearchWordResults(brands.offQuery)
-        : null;
-    if (offWordResponse == null || offWordResponse.products.isEmpty) {
-      offWordResponse = await _offDataSource.fetchSearchWordResults(
-        searchString,
+    if (brands.hasBrands) {
+      final branded = _candidates(
+        await _offDataSource.fetchSearchWordResults(brands.offQuery),
+        userCountryTag,
       );
+      if (branded.isNotEmpty) return _fuseRelevanceAndPopularity(branded);
     }
+    return _fuseRelevanceAndPopularity(
+      _candidates(
+        await _offDataSource.fetchSearchWordResults(searchString),
+        userCountryTag,
+      ),
+    );
+  }
 
+  List<_RankedOffProduct> _candidates(
+    OFFWordResponseDTO offWordResponse,
+    String? userCountryTag,
+  ) {
     // The API returns hits in relevance order. Keep that as the relevance
     // signal, drop items without nutriments or that fail plausibility, then
     // re-rank by fusing relevance position with OFF's popularity_key so
@@ -66,7 +78,6 @@ class ProductsRepository {
     // The country boost follows the device on purpose, not the language
     // picked in the app: a German speaker in Austria wants Austrian
     // products ranked up. Food-name language is AppLocale's job (#1214).
-    final userCountryTag = await _countryTag();
     final candidates = <_RankedOffProduct>[];
     for (var i = 0; i < offWordResponse.products.length; i++) {
       final dto = offWordResponse.products[i];
@@ -79,8 +90,7 @@ class ProductsRepository {
         _RankedOffProduct(meal, dto.popularity_key ?? 0, i, inUserCountry),
       );
     }
-
-    return _fuseRelevanceAndPopularity(candidates);
+    return candidates;
   }
 
   /// Re-orders the relevance-ordered candidate pool by reciprocal-rank fusion

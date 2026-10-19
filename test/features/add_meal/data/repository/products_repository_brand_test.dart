@@ -84,4 +84,49 @@ void main() {
 
     expect(off.asked, ['Mango Nektar']);
   });
+
+  test(
+    'brand hits without nutrition values fall back to the plain query',
+    () async {
+      final off = _NoNutrimentsForBrandDataSource();
+      final repository = ProductsRepository(
+        off,
+        SpFoodDataSource(),
+        countryTag: () async => 'en:germany',
+      );
+
+      final results = await repository.getOFFProductsByString(
+        'Paradiso Mango-Maracuja',
+      );
+
+      expect(off.asked, [
+        'Mango-Maracuja brands_tags:paradiso',
+        'Paradiso Mango-Maracuja',
+      ]);
+      expect(results, isNotEmpty);
+    },
+  );
+}
+
+/// The brand query answers with products that carry no nutrition values.
+class _NoNutrimentsForBrandDataSource extends _RecordedOffDataSource {
+  @override
+  Future<OFFWordResponseDTO> fetchSearchWordResults(String searchString) async {
+    if (!searchString.contains('brands_tags')) {
+      return super.fetchSearchWordResults(searchString);
+    }
+    asked.add(searchString);
+    final json =
+        jsonDecode(
+              File(
+                'test/fixtures/off_search/'
+                'Mango-Maracuja_brands_tags_paradiso.json',
+              ).readAsStringSync(),
+            )
+            as Map<String, dynamic>;
+    for (final product in json['hits'] as List) {
+      (product as Map<String, dynamic>)['nutriments'] = null;
+    }
+    return OFFWordResponseDTO.fromJson(json);
+  }
 }
