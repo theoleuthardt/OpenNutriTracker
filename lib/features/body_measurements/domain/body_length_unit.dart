@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:opennutritracker/core/utils/calc/unit_calc.dart';
 import 'package:opennutritracker/features/body_measurements/domain/body_measurement.dart';
 
@@ -16,13 +17,9 @@ enum BodyLengthUnit {
   double toCm(double value) =>
       this == BodyLengthUnit.cm ? value : UnitCalc.inchesToCm(value);
 
-  /// [cm] in this unit with one decimal, without a trailing `.0`.
-  String format(double cm) {
-    final value = double.parse(fromCm(cm).toStringAsFixed(1));
-    return value == value.roundToDouble()
-        ? value.toInt().toString()
-        : value.toString();
-  }
+  /// [cm] in this unit with at most one decimal, in the app's locale
+  /// ("84,5" in German).
+  String format(double cm) => NumberFormat('0.#').format(fromCm(cm));
 
   /// The allowed range in this unit, rounded inwards to whole numbers.
   ({int min, int max}) get range => (

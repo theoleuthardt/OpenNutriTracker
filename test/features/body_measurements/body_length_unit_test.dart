@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:opennutritracker/features/body_measurements/domain/body_length_unit.dart';
 
@@ -23,5 +24,10 @@ void main() {
   test('the allowed range in each unit', () {
     expect(BodyLengthUnit.cm.range, (min: 10, max: 300));
     expect(BodyLengthUnit.inch.range, (min: 4, max: 118));
+  });
+
+  test('decimals follow the locale', () {
+    expect(Intl.withLocale('de', () => BodyLengthUnit.cm.format(84.5)), '84,5');
+    expect(Intl.withLocale('en', () => BodyLengthUnit.cm.format(84.5)), '84.5');
   });
 }
