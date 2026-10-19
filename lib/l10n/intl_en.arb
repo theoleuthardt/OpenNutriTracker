@@ -1587,5 +1587,11 @@
   "nutrientGroupFattyAcidsLabel": "Fatty acids & cholesterol",
   "nutrientGroupMineralsLabel": "Minerals",
   "nutrientGroupVitaminsLabel": "Vitamins",
-  "nutrientGoalNoReferenceHint": "No general reference value, set your own if you like."
+  "nutrientGoalNoReferenceHint": "No general reference value, set your own if you like.",
+  "nutrientReferenceFallbackTag": "IOM/FDA",
+  "nutrientReferenceStandardLabel": "Reference values",
+  "nutrientReferenceStandardHelp": "DGE: the D-A-CH reference values of the German, Austrian and Swiss nutrition societies. Where the DGE gives none, the panel uses the IOM/FDA value and marks it.",
+  "nutrientReferenceIomLabel": "IOM",
+  "nutrientReferenceDgeLabel": "DGE",
+  "driPanelDgeSourceNote": "With DGE selected: DGE/ÖGE, Referenzwerte für die Nährstoffzufuhr, 3rd edition 2025."
 }

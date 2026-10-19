@@ -19,6 +19,7 @@ import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/features/add_meal/domain/nutrients/nutrient_field.dart';
 import 'package:opennutritracker/features/add_meal/domain/nutrients/nutrient_total.dart';
 import 'package:opennutritracker/features/diary/presentation/widgets/nutrient_panel_rows.dart';
+import 'package:opennutritracker/features/settings/domain/nutrient_reference_setting.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -133,6 +134,27 @@ class _DailyNutrientPanelState extends State<DailyNutrientPanel> {
 
   Future<_PanelData>? _panelDataFuture;
 
+  ValueNotifier<int>? _referenceChanges;
+
+  @override
+  void initState() {
+    super.initState();
+    if (locator.isRegistered<NutrientReferenceSetting>()) {
+      _referenceChanges = locator<NutrientReferenceSetting>().changes
+        ..addListener(_reload);
+    }
+  }
+
+  @override
+  void dispose() {
+    _referenceChanges?.removeListener(_reload);
+    super.dispose();
+  }
+
+  void _reload() => setState(() {
+    _panelDataFuture = _loadPanelData();
+  });
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -191,10 +213,18 @@ class _DailyNutrientPanelState extends State<DailyNutrientPanel> {
       weekIntakes = widget.intakes;
     }
 
+    var standard = NutrientReferenceSetting.defaultStandard;
+    try {
+      standard = await locator<NutrientReferenceSetting>().standard();
+    } catch (_) {
+      // Tests without the locator wired up — keep the default.
+    }
+
     return _PanelData(
       user: user,
       visibility: visibility,
       weekIntakes: weekIntakes,
+      standard: standard,
     );
   }
 
@@ -216,6 +246,7 @@ class _DailyNutrientPanelState extends State<DailyNutrientPanel> {
   Widget _buildPanel(BuildContext context, _PanelData? data) {
     final user = data?.user;
     final visibility = data?.visibility ?? const <String, bool>{};
+    final standard = data?.standard ?? NutrientReferenceSetting.defaultStandard;
     // Pick the right source for totals. Daily view sums today's intakes;
     // weekly view sums the seven-day window and then divides each total by
     // seven to get an average daily intake.
@@ -315,9 +346,25 @@ class _DailyNutrientPanelState extends State<DailyNutrientPanel> {
       if (!(visibility[row.key] ?? true)) continue;
       final total = totals.coverage[row.key]!;
       var value = total.sum;
-      var reference = references.containsKey(row.key)
-          ? references[row.key]
-          : NutrientPanelRow.extraReference(row.key, trackedDay: td, user: user);
+      final own = NutrientPanelRow.ownGoal(row.key, td);
+      final dge = own == null && standard == NutrientReferenceStandard.dge
+          ? getDgeReferenceFor(nutrient: row.key, user: user)?.amount
+          : null;
+      var reference =
+          own ??
+          dge ??
+          (references.containsKey(row.key)
+              ? references[row.key]
+              : NutrientPanelRow.extraReference(
+                  row.key,
+                  trackedDay: td,
+                  user: user,
+                ));
+      final fallback =
+          standard == NutrientReferenceStandard.dge &&
+          own == null &&
+          dge == null &&
+          reference != null;
       var unit = row.field.unit;
       if (row.key == NutrientPanelKeys.energy) {
         if (useKj) {
@@ -334,6 +381,7 @@ class _DailyNutrientPanelState extends State<DailyNutrientPanel> {
           unit: unit,
           excessMatters: row.excessMatters,
           total: total,
+          fallback: fallback,
         ),
       );
     }
@@ -500,6 +548,8 @@ class _DailyNutrientPanelState extends State<DailyNutrientPanel> {
                 Text(s.driPanelInfoBody),
                 const SizedBox(height: 12.0),
                 Text(s.diaryNutrientPanelDataDisclaimer),
+                const SizedBox(height: 12.0),
+                Text(s.driPanelDgeSourceNote),
                 const SizedBox(height: 16.0),
                 Semantics(
                   identifier: 'dri-panel-info-link',
@@ -776,11 +826,13 @@ class _PanelData {
   final UserEntity? user;
   final Map<String, bool> visibility;
   final List<IntakeEntity> weekIntakes;
+  final NutrientReferenceStandard standard;
 
   _PanelData({
     required this.user,
     required this.visibility,
     required this.weekIntakes,
+    this.standard = NutrientReferenceSetting.defaultStandard,
   });
 }
 
@@ -803,6 +855,9 @@ class _NutrientRow extends StatelessWidget {
   /// least" when only some (#46).
   final NutrientTotal? total;
 
+  /// Whether the DGE gives no value and the reference is the IOM/FDA one.
+  final bool fallback;
+
   const _NutrientRow({
     required this.label,
     required this.value,
@@ -810,6 +865,7 @@ class _NutrientRow extends StatelessWidget {
     required this.unit,
     required this.excessMatters,
     this.total,
+    this.fallback = false,
   });
 
   @override
@@ -862,6 +918,15 @@ class _NutrientRow extends StatelessWidget {
                   // reference is a limit to stay under, not a target to reach.
                   // A small qualifier says so, since the bare "x / y" reads as
                   // a goal otherwise.
+                  if (fallback) ...[
+                    Text(
+                      s.nutrientReferenceFallbackTag,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: palette.textMuted,
+                      ),
+                    ),
+                    const SizedBox(width: Dimens.spacing4),
+                  ],
                   if (excessMatters && reference != null) ...[
                     Text(
                       s.nutrientPanelLimitLabel,
