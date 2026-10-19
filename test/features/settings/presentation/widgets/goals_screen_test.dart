@@ -33,8 +33,13 @@ class _FakeStore extends GoalSettingsStore {
   @override
   Future<double> calculatedKcal() async => 2000;
 
+  Object? saveError;
+
   @override
-  Future<void> save(GoalTargets targets) async => saved.add(targets);
+  Future<void> save(GoalTargets targets) async {
+    if (saveError != null) throw saveError!;
+    saved.add(targets);
+  }
 }
 
 class _UnusedConfig extends Fake implements ConfigRepository {}
@@ -243,5 +248,31 @@ void main() {
       tester.widget<TextField>(field('goals-carbs-g')).controller!.text,
       '220',
     );
+  });
+
+  testWidgets('a hidden invalid value does not block the save', (tester) async {
+    final store = _FakeStore();
+    await pumpScreen(tester, store);
+
+    await tester.tap(find.text(l10nEn.goalsKcalFixed));
+    await tester.pumpAndSettle();
+    await tester.enterText(field('goals-kcal-fixed'), '300');
+    await tester.tap(find.text(l10nEn.goalsKcalCalculated));
+    await tester.pumpAndSettle();
+    await save(tester);
+
+    expect(store.saved.single, const GoalTargets());
+  });
+
+  testWidgets('a failed save says so and can be retried', (tester) async {
+    final store = _FakeStore()..saveError = StateError('disk full');
+    await pumpScreen(tester, store);
+
+    await save(tester);
+    expect(find.text(l10nEn.goalsSaveFailed), findsOneWidget);
+
+    store.saveError = null;
+    await save(tester);
+    expect(store.saved, hasLength(1));
   });
 }

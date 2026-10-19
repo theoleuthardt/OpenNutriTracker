@@ -1520,5 +1520,7 @@
   "goalsGramsMissing": "Enter all three macros",
   "goalsGramsKcalHint": "Your macros add up to {macroKcal} kcal, your calorie goal is {goalKcal} kcal.",
   "@goalsGramsKcalHint": {"placeholders": {"macroKcal": {"type": "int"}, "goalKcal": {"type": "int"}}},
-  "goalsSaved": "Goals saved"
+  "goalsSaved": "Goals saved",
+  "goalsSaveFailed": "The goals could not be saved.",
+  "goalsLoadFailed": "The goals could not be loaded."
 }

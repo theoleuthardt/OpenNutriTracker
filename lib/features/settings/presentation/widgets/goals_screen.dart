@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:logging/logging.dart';
 import 'package:opennutritracker/core/domain/entity/goal_targets.dart';
 import 'package:opennutritracker/core/styles/dimens.dart';
 import 'package:opennutritracker/core/utils/calc/macro_calc.dart';
@@ -35,6 +36,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
   final _protein = TextEditingController();
 
   bool _loaded = false;
+  bool _loadFailed = false;
   bool _saving = false;
   KcalGoalMode _kcalMode = KcalGoalMode.calculated;
   MacroGoalMode _macroMode = MacroGoalMode.percent;
@@ -62,21 +64,28 @@ class _GoalsScreenState extends State<GoalsScreen> {
   }
 
   Future<void> _load() async {
-    final targets = await _store.loadTargets();
-    final split = await _store.loadSplit();
-    final calculated = await _store.calculatedKcal();
-    if (!mounted) return;
-    setState(() {
-      _kcalMode = targets.kcalMode;
-      _macroMode = targets.macroMode;
-      _split = split;
-      _calculatedKcal = calculated;
-      _fixedKcal.text = _format(targets.fixedKcal);
-      _carbs.text = _format(targets.carbsG);
-      _fat.text = _format(targets.fatG);
-      _protein.text = _format(targets.proteinG);
-      _loaded = true;
-    });
+    try {
+      final targets = await _store.loadTargets();
+      final split = await _store.loadSplit();
+      final calculated = await _store.calculatedKcal();
+      if (!mounted) return;
+      setState(() {
+        _kcalMode = targets.kcalMode;
+        _macroMode = targets.macroMode;
+        _split = split;
+        _calculatedKcal = calculated;
+        _fixedKcal.text = _format(targets.fixedKcal);
+        _carbs.text = _format(targets.carbsG);
+        _fat.text = _format(targets.fatG);
+        _protein.text = _format(targets.proteinG);
+        _loaded = true;
+      });
+    } catch (error, stackTrace) {
+      Logger(
+        'GoalsScreen',
+      ).warning('Could not load the goals', error, stackTrace);
+      if (mounted) setState(() => _loadFailed = true);
+    }
   }
 
   static String _format(double? value) {
@@ -124,39 +133,39 @@ class _GoalsScreenState extends State<GoalsScreen> {
     if (mounted) setState(() => _split = split);
   }
 
+  /// Validates what the current modes show; a value the other mode would
+  /// use is kept when valid and dropped when not, so nothing hidden blocks
+  /// the save.
   Future<void> _save() async {
     if (_saving) return;
     final s = S.of(context);
-    final fixedText = _fixedKcal.text.trim();
-    final fixed = _parse(fixedText);
-    final grams = [
-      _parse(_carbs.text),
-      _parse(_fat.text),
-      _parse(_protein.text),
-    ];
-    String? kcalError;
-    String? gramsError;
+    final fixed = _parse(_fixedKcal.text);
     final fixedValid =
         fixed != null &&
         fixed >= GoalTargets.minFixedKcal &&
         fixed <= GoalTargets.maxFixedKcal;
-    if (_kcalMode == KcalGoalMode.fixed && !fixedValid ||
-        _kcalMode == KcalGoalMode.calculated &&
-            fixedText.isNotEmpty &&
-            !fixedValid) {
+    final grams = [
+      for (final controller in [_carbs, _fat, _protein])
+        _validGrams(_parse(controller.text)),
+    ];
+    final gramsTyped = [
+      for (final controller in [_carbs, _fat, _protein])
+        _parse(controller.text),
+    ];
+    String? kcalError;
+    String? gramsError;
+    if (_kcalMode == KcalGoalMode.fixed && !fixedValid) {
       kcalError = s.goalsKcalRangeError(
         GoalTargets.minFixedKcal.toInt(),
         GoalTargets.maxFixedKcal.toInt(),
       );
     }
-    final gramsGiven = grams.whereType<double>();
-    final gramsInRange = gramsGiven.every(
-      (g) => g >= 0 && g <= GoalTargets.maxMacroG,
-    );
-    if (!gramsInRange) {
-      gramsError = s.goalsGramsRangeError(GoalTargets.maxMacroG.toInt());
-    } else if (_macroMode == MacroGoalMode.grams && gramsGiven.length < 3) {
-      gramsError = s.goalsGramsMissing;
+    if (_macroMode == MacroGoalMode.grams) {
+      if (gramsTyped.any((g) => g == null)) {
+        gramsError = s.goalsGramsMissing;
+      } else if (grams.any((g) => g == null)) {
+        gramsError = s.goalsGramsRangeError(GoalTargets.maxMacroG.toInt());
+      }
     }
     setState(() {
       _kcalError = kcalError;
@@ -167,20 +176,34 @@ class _GoalsScreenState extends State<GoalsScreen> {
     setState(() => _saving = true);
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    await _store.save(
-      GoalTargets(
-        kcalMode: _kcalMode,
-        fixedKcal: fixedValid ? fixed : null,
-        macroMode: _macroMode,
-        carbsG: grams[0],
-        fatG: grams[1],
-        proteinG: grams[2],
-      ),
-    );
+    try {
+      await _store.save(
+        GoalTargets(
+          kcalMode: _kcalMode,
+          fixedKcal: fixedValid ? fixed : null,
+          macroMode: _macroMode,
+          carbsG: grams[0],
+          fatG: grams[1],
+          proteinG: grams[2],
+        ),
+      );
+    } catch (error, stackTrace) {
+      Logger(
+        'GoalsScreen',
+      ).warning('Could not save the goals', error, stackTrace);
+      if (mounted) setState(() => _saving = false);
+      messenger.showSnackBar(SnackBar(content: Text(s.goalsSaveFailed)));
+      return;
+    }
     if (!mounted) return;
     messenger.showSnackBar(SnackBar(content: Text(s.goalsSaved)));
     navigator.pop();
   }
+
+  static double? _validGrams(double? grams) =>
+      grams != null && grams >= 0 && grams <= GoalTargets.maxMacroG
+      ? grams
+      : null;
 
   @override
   Widget build(BuildContext context) {
@@ -198,7 +221,9 @@ class _GoalsScreenState extends State<GoalsScreen> {
           ),
         ],
       ),
-      body: !_loaded
+      body: _loadFailed
+          ? Center(child: Text(s.goalsLoadFailed))
+          : !_loaded
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.all(Dimens.spacing16),

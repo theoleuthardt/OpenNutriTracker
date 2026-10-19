@@ -1469,5 +1469,7 @@
   "goalsGramsRangeError": "Bitte 0 bis {max} g eingeben",
   "goalsGramsMissing": "Bitte alle drei Makros eingeben",
   "goalsGramsKcalHint": "Deine Makros ergeben {macroKcal} kcal, dein Kalorienziel liegt bei {goalKcal} kcal.",
-  "goalsSaved": "Ziele gespeichert"
+  "goalsSaved": "Ziele gespeichert",
+  "goalsSaveFailed": "Die Ziele konnten nicht gespeichert werden.",
+  "goalsLoadFailed": "Die Ziele konnten nicht geladen werden."
 }
