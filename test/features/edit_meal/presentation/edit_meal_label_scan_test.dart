@@ -4,6 +4,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:opennutritracker/core/data/data_source/custom_meal_data_source.dart';
+import 'package:opennutritracker/core/data/dbo/meal_dbo.dart';
 import 'package:opennutritracker/core/data/repository/config_repository.dart';
 import 'package:opennutritracker/core/domain/entity/app_theme_entity.dart';
 import 'package:opennutritracker/core/domain/entity/config_entity.dart';
@@ -41,6 +42,7 @@ void main() {
 
   setUp(() {
     photosTaken = 0;
+    _FakeCustomMealDataSource.saved.clear();
     getIt.registerFactory<EditMealBloc>(
       () => EditMealBloc(
         _FakeGetConfigUsecase(),
@@ -66,13 +68,19 @@ void main() {
         child: MaterialApp(
           localizationsDelegates: const [S.delegate],
           supportedLocales: S.supportedLocales,
-          onGenerateRoute: (settings) => MaterialPageRoute<void>(
-            settings: RouteSettings(
-              name: NavigationOptions.editMealRoute,
-              arguments: arguments,
-            ),
-            builder: (_) => const EditMealScreen(),
-          ),
+          onGenerateRoute: (settings) =>
+              settings.name == NavigationOptions.mealDetailRoute
+              ? MaterialPageRoute<void>(
+                  settings: settings,
+                  builder: (_) => const Scaffold(body: Text('meal-detail')),
+                )
+              : MaterialPageRoute<void>(
+                  settings: RouteSettings(
+                    name: NavigationOptions.editMealRoute,
+                    arguments: arguments,
+                  ),
+                  builder: (_) => const EditMealScreen(),
+                ),
         ),
       ),
     );
@@ -323,6 +331,7 @@ void main() {
         await saveWithBarcode(tester, code);
 
         expect(find.text(l10nEn.barcodeInvalidCheckDigit), findsOneWidget);
+        expect(_FakeCustomMealDataSource.saved, isEmpty);
       });
     }
 
@@ -331,7 +340,8 @@ void main() {
         await saveWithBarcode(tester, code);
 
         expect(find.text(l10nEn.barcodeInvalidCheckDigit), findsNothing);
-        expect(find.text(l10nEn.customMealBarcodeInvalid), findsNothing);
+        expect(_FakeCustomMealDataSource.saved.single.code, code);
+        expect(find.text('meal-detail'), findsOneWidget);
       });
     }
   });
@@ -374,6 +384,11 @@ class _FakeConfigRepository implements ConfigRepository {
 }
 
 class _FakeCustomMealDataSource implements CustomMealDataSource {
+  static final saved = <MealDBO>[];
+
+  @override
+  Future<void> saveCustomMeal(MealDBO mealDBO) async => saved.add(mealDBO);
+
   @override
   dynamic noSuchMethod(Invocation invocation) =>
       throw UnimplementedError('Unexpected call: ${invocation.memberName}');
