@@ -126,20 +126,26 @@ class _ScannerScreenState extends State<ScannerScreen>
             _navigatedAfterLoad = true;
             Future.microtask(() async {
               if (!context.mounted) return;
+              final confirmed = await _isConfirmedProduct(state.product);
+              if (!context.mounted) return;
               if (_pickMode) {
                 // Recipe ingredient picker — hand the loaded MealEntity back
                 // to whoever pushed us instead of routing into the meal-detail
                 // logging flow.
-                Navigator.of(context).pop(state.product);
+                if (confirmed) {
+                  Navigator.of(context).pop(state.product);
+                } else {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final label = S.of(context).storeCodeRejectedInPicker;
+                  Navigator.of(context).pop();
+                  messenger.showSnackBar(SnackBar(content: Text(label)));
+                }
                 return;
               }
-              if (await _openOwnFoodUnlessConfirmed(
-                state.product,
-                state.usesImperialUnits,
-              )) {
+              if (!confirmed) {
+                _openOwnFoodFor(state.product.code!, state.usesImperialUnits);
                 return;
               }
-              if (!context.mounted) return;
               Navigator.of(context).pushReplacementNamed(
                 NavigationOptions.mealDetailRoute,
                 arguments: MealDetailScreenArguments(
@@ -170,24 +176,24 @@ class _ScannerScreenState extends State<ScannerScreen>
     );
   }
 
-  /// For a product found under a store-internal code that the user has not
-  /// confirmed yet, asks whether it is the scanned one (#83). On no, opens a
-  /// new own food with that code and the table scan instead, and returns
-  /// true; the own food then wins the next scan of the code.
-  Future<bool> _openOwnFoodUnlessConfirmed(
-    MealEntity product,
-    bool usesImperialUnits,
-  ) async {
+  /// Whether [product] may be used as the scanned product. For a product
+  /// found under a store-internal code the user has not confirmed yet, that
+  /// is the answer to "is this your product?" (#83); a yes is remembered.
+  Future<bool> _isConfirmedProduct(MealEntity product) async {
     final code = product.code;
-    if (code == null || !isStoreInternalBarcode(code)) return false;
+    if (code == null || !isStoreInternalBarcode(code)) return true;
     final check = locator<StoreBarcodeCheck>();
-    if (!await check.needsConfirmation(product)) return false;
-    if (!mounted) return true;
-    if (await showStoreProductConfirmDialog(context, product)) {
-      await check.confirm(code);
-      return false;
-    }
-    if (!mounted) return true;
+    if (!await check.needsConfirmation(product)) return true;
+    if (!mounted) return false;
+    final confirmed = await showStoreProductConfirmDialog(context, product);
+    if (confirmed) await check.confirm(code);
+    return confirmed;
+  }
+
+  /// Replaces the scanner with a new own food carrying [code] and the
+  /// table scan, for a store code whose Open Food Facts product was not the
+  /// scanned one; the own food then wins the next scan of the code.
+  void _openOwnFoodFor(String code, bool usesImperialUnits) {
     Navigator.of(context).pushReplacementNamed(
       NavigationOptions.editMealRoute,
       arguments: EditMealScreenArguments(
@@ -199,7 +205,6 @@ class _ScannerScreenState extends State<ScannerScreen>
         scanLabelOnOpen: true,
       ),
     );
-    return true;
   }
 
   Scaffold _getScannerContent(BuildContext context) {
