@@ -151,8 +151,9 @@ class _EditMealScreenState extends State<EditMealScreen> {
             ? existingCode
             : "");
     if (args.scanLabelOnOpen) {
-      WidgetsBinding.instance
-          .addPostFrameCallback((_) => _onScanLabelPressed());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _onScanLabelPressed();
+      });
     }
     _mealQuantityTextController.text = _mealEntity.mealQuantity ?? "";
     _servingQuantityTextController.text =

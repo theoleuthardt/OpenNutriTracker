@@ -186,6 +186,37 @@ void main() {
     expect(find.text(l10nEn.labelScanAction), findsOneWidget);
   });
 
+  testWidgets('a device without text recognition says so', (tester) async {
+    getIt.registerLazySingleton<NutritionLabelScanner>(
+      () => NutritionLabelScanner(
+        _FakeRecognizer(
+          label,
+          error: const TextRecognitionException(
+            TextRecognitionFailure.unavailable,
+          ),
+        ),
+        pickImage: (_) async => '/tmp/label.jpg',
+        deletePhoto: (_) async {},
+      ),
+    );
+    await pumpEditMeal(
+      tester,
+      EditMealScreenArguments(
+        DateTime(2026, 10, 19),
+        MealEntity.empty(),
+        IntakeTypeEntity.snack,
+        false,
+      ),
+    );
+
+    await tester.tap(find.text(l10nEn.labelScanAction));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10nEn.labelScanCamera));
+    await tester.pumpAndSettle();
+
+    expect(find.text(l10nEn.labelScanUnavailable), findsOneWidget);
+  });
+
   testWidgets('a photo without a table says so and fills nothing', (
     tester,
   ) async {
@@ -239,11 +270,15 @@ OcrLine _line(String text, double y) =>
 
 class _FakeRecognizer implements TextRecognizer {
   final List<OcrLine> lines;
+  final TextRecognitionException? error;
 
-  _FakeRecognizer(this.lines);
+  _FakeRecognizer(this.lines, {this.error});
 
   @override
-  Future<List<OcrLine>> recognize(String imagePath) async => lines;
+  Future<List<OcrLine>> recognize(String imagePath) async {
+    if (error != null) throw error!;
+    return lines;
+  }
 }
 
 class _FakeGetConfigUsecase implements GetConfigUsecase {
