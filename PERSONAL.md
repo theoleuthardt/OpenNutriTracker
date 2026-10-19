@@ -57,11 +57,11 @@ unsignierte IPA:
 Lokal (optional, macOS mit Xcode und CocoaPods):
 
 ```sh
-fvm use 3.44.6            # Flutter-Version aus .fvmrc
-flutter pub get
-dart run build_runner build --delete-conflicting-outputs
+fvm install               # Flutter-Version aus .fvmrc (3.44.6)
+fvm flutter pub get
+fvm dart run build_runner build --delete-conflicting-outputs
 cd ios && pod install && cd ..
-flutter build ios --no-codesign --release --flavor full
+fvm flutter build ios --no-codesign --release --flavor full
 ```
 
 Tests und Analyse laufen auch unter Linux: `flutter analyze`,
