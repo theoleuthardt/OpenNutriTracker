@@ -967,6 +967,32 @@ void main() {
 
       expect(result.meals.map((m) => m.code), ['snap']);
     });
+
+    test('a product favourite is not slipped into the Food search', () async {
+      final favorites = FakeFavoritesUsecase()
+        ..meals.addAll([
+          _meal(
+              code: 'snap', name: 'Tomato Paste', source: MealSourceEntity.off),
+          _meal(
+              code: 'own',
+              name: 'Tomato Sauce',
+              source: MealSourceEntity.custom),
+        ]);
+      productsRepository.fdcResults['tomato'] = const [];
+      useCase = SearchProductsUseCase(
+        productsRepository,
+        getIntakeUsecase,
+        customMealDataSource,
+        cachedOffMealDataSource,
+        recipeDataSource,
+        getConfigUsecase,
+        favorites: favorites,
+      );
+
+      final result = await useCase.searchFDCFoodByString('tomato');
+
+      expect(result.meals.map((m) => m.code), ['own']);
+    });
   });
 }
 

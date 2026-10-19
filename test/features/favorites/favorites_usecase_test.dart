@@ -213,4 +213,16 @@ void main() {
       ['c', 'a', 'b'],
     );
   });
+
+  test('a recipe starred as a meal is the recipe favourite', () async {
+    await recipes.saveRecipe(_recipe('r1'));
+    final recipeMeal = _recipe('r1').toMealEntity();
+
+    expect(await favorites.toggleMeal(recipeMeal), isTrue);
+
+    expect(favorites.isMealFavorite(recipeMeal), isTrue);
+    expect(favorites.isRecipeFavorite('r1'), isTrue);
+    expect((await favorites.list()).single.kind, FavoriteKind.recipe);
+    expect(await favorites.toggleRecipe(_recipe('r1')), isFalse);
+  });
 }

@@ -24,26 +24,33 @@ class FavoritesUsecase {
 
   /// Whether [meal] is a favourite: a food by source and code, a recipe
   /// (as listed in a search) by its id.
-  bool isMealFavorite(MealEntity meal) => _dataSource.contains(
-    meal.source == MealSourceEntity.recipe
-        ? FavoriteEntry.idForRecipe(meal.code ?? '')
-        : FavoriteEntry.idForMeal(meal),
-  );
+  bool isMealFavorite(MealEntity meal) =>
+      _dataSource.contains(FavoriteEntry.idForMeal(meal));
 
   bool isRecipeFavorite(String recipeId) =>
       _dataSource.contains(FavoriteEntry.idForRecipe(recipeId));
 
-  /// Marks or unmarks [meal]; returns whether it is a favourite now.
+  /// Marks or unmarks [meal]; returns whether it is a favourite now. A
+  /// recipe listed as a meal is kept as that recipe.
   Future<bool> toggleMeal(MealEntity meal) => _toggle(
     FavoriteEntry.idForMeal(meal),
-    (id, index) => FavoriteEntry(
-      id: id,
-      kind: FavoriteKind.food,
-      name: meal.name ?? '',
-      meal: meal,
-      createdAt: _clock(),
-      sortIndex: index,
-    ),
+    (id, index) => meal.source == MealSourceEntity.recipe
+        ? FavoriteEntry(
+            id: id,
+            kind: FavoriteKind.recipe,
+            name: meal.name ?? '',
+            recipeId: meal.code,
+            createdAt: _clock(),
+            sortIndex: index,
+          )
+        : FavoriteEntry(
+            id: id,
+            kind: FavoriteKind.food,
+            name: meal.name ?? '',
+            meal: meal,
+            createdAt: _clock(),
+            sortIndex: index,
+          ),
   );
 
   /// Marks or unmarks [recipe]; returns whether it is a favourite now.

@@ -373,7 +373,8 @@ class _AddMealScreenState extends State<AddMealScreen> {
                       }
                       return ListView.builder(
                         itemCount: merged.length,
-                        itemBuilder: (context, index) => _mealCard(merged[index], imperial),
+                        itemBuilder: (context, index) =>
+                            _mealCard(merged[index], imperial),
                       );
                     },
                   );
@@ -396,6 +397,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
                 } else if (state is ProductsLoadingState) {
                   return _pendingSpinner;
                 } else if (state is ProductsLoadedState) {
+                  final products = _favorites.favoritesFirst(state.products);
                   if (state.products.isEmpty) {
                     return Flexible(
                       child: _productsPending(state, query)
@@ -418,7 +420,10 @@ class _AddMealScreenState extends State<AddMealScreen> {
                         if (index == state.products.length) {
                           return const NoResultsWidget();
                         }
-                        return _mealCard(state.products[index], state.usesImperialUnits);
+                        return _mealCard(
+                          products[index],
+                          state.usesImperialUnits,
+                        );
                       },
                     ),
                   );
@@ -447,6 +452,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
                 } else if (state is FoodLoadingState) {
                   return _pendingSpinner;
                 } else if (state is FoodLoadedState) {
+                  final food = _favorites.favoritesFirst(state.food);
                   if (state.food.isEmpty) {
                     return Flexible(
                       child: _foodPending(state, query)
@@ -468,7 +474,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
                         if (index == state.food.length) {
                           return const NoResultsWidget();
                         }
-                        return _mealCard(state.food[index], state.usesImperialUnits);
+                        return _mealCard(food[index], state.usesImperialUnits);
                       },
                     ),
                   );
@@ -502,7 +508,10 @@ class _AddMealScreenState extends State<AddMealScreen> {
                 return ListView.builder(
                   itemCount: state.recentMeals.length,
                   itemBuilder: (context, index) {
-                    return _mealCard(state.recentMeals[index], state.usesImperialUnits);
+                    return _mealCard(
+                      state.recentMeals[index],
+                      state.usesImperialUnits,
+                    );
                   },
                 );
               }

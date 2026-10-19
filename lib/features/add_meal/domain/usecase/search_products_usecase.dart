@@ -253,6 +253,12 @@ class SearchProductsUseCase {
           : _favoritesFirst(
               meals,
               await favorites.favoriteMeals(query: normalizedSearchString),
+              keepSnapshot: (meal) =>
+                  meal.source == MealSourceEntity.custom ||
+                  meal.source == MealSourceEntity.recipe ||
+                  meal.source == cacheSource &&
+                      (meal.backendSource == null ||
+                          config.isFoodSourceEnabled(meal.backendSource!)),
             ),
       remoteSourceEmpty: remoteSourceEmpty,
     );
@@ -260,18 +266,26 @@ class SearchProductsUseCase {
 
   /// [meals] led by [favorites] in their list order. A favourite already in
   /// [meals] keeps that (fresher) copy; one that is not comes from its
-  /// snapshot.
+  /// snapshot when [keepSnapshot] allows it for this search (the tab's
+  /// source and the enabled food databases, like the cache).
   List<MealEntity> _favoritesFirst(
     List<MealEntity> meals,
-    List<MealEntity> favorites,
-  ) {
+    List<MealEntity> favorites, {
+    required bool Function(MealEntity snapshot) keepSnapshot,
+  }) {
     final byKey = {for (final meal in meals) _dedupKey(meal): meal};
-    final favoriteKeys = [for (final meal in favorites) _dedupKey(meal)];
+    final leading = [
+      for (final favorite in favorites)
+        if (byKey[_dedupKey(favorite)] case final inResults?)
+          inResults
+        else if (keepSnapshot(favorite))
+          favorite,
+    ];
+    final leadingKeys = {for (final meal in leading) _dedupKey(meal)};
     return [
-      for (final (index, key) in favoriteKeys.indexed)
-        byKey[key] ?? favorites[index],
+      ...leading,
       for (final meal in meals)
-        if (!favoriteKeys.contains(_dedupKey(meal))) meal,
+        if (!leadingKeys.contains(_dedupKey(meal))) meal,
     ];
   }
 
