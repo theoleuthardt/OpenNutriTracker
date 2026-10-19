@@ -25,9 +25,10 @@ class _FakeConfigDataSource implements ConfigDataSource {
 }
 
 void main() {
-  testWidgets('saves the typed amount', (tester) async {
-    final config = _FakeConfigDataSource();
-    final quickAmount = WaterQuickAmount(config);
+  Future<void> openDialog(
+    WidgetTester tester,
+    WaterQuickAmount quickAmount,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: const [
@@ -53,6 +54,11 @@ void main() {
     );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
+  }
+
+  testWidgets('saves the typed amount', (tester) async {
+    final config = _FakeConfigDataSource();
+    await openDialog(tester, WaterQuickAmount(config));
 
     expect(find.text('330'), findsOneWidget);
     await tester.enterText(find.byType(TextField), '600');
@@ -61,5 +67,30 @@ void main() {
 
     expect(config.config.waterQuickAmountMl, 600);
     expect(find.byType(WaterQuickAmountDialog), findsNothing);
+  });
+
+  testWidgets('an amount outside the range is refused and keeps the dialog', (
+    tester,
+  ) async {
+    final config = _FakeConfigDataSource();
+    await openDialog(tester, WaterQuickAmount(config));
+
+    await tester.enterText(find.byType(TextField), '20');
+    await tester.tap(find.text(l10nEn.dialogOKLabel));
+    await tester.pumpAndSettle();
+
+    expect(find.text(l10nEn.waterQuickAmountRangeError(50, 2000)), findsOne);
+    expect(find.byType(WaterQuickAmountDialog), findsOneWidget);
+    expect(config.config.waterQuickAmountMl, isNull);
+  });
+
+  testWidgets('it shows the stored amount, not a stale one', (tester) async {
+    final config = _FakeConfigDataSource()..config.waterQuickAmountMl = 900;
+    final quickAmount = WaterQuickAmount(config);
+    quickAmount.amount.value = 400;
+
+    await openDialog(tester, quickAmount);
+
+    expect(find.text('900'), findsOneWidget);
   });
 }

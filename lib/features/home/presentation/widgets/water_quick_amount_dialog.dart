@@ -14,9 +14,16 @@ class WaterQuickAmountDialog extends StatefulWidget {
 }
 
 class _WaterQuickAmountDialogState extends State<WaterQuickAmountDialog> {
-  late final _controller = TextEditingController(
-    text: widget.quickAmount.amount.value.toString(),
-  );
+  final _controller = TextEditingController();
+  bool _loaded = false;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
 
   @override
   void dispose() {
@@ -24,11 +31,36 @@ class _WaterQuickAmountDialogState extends State<WaterQuickAmountDialog> {
     super.dispose();
   }
 
+  /// Reads the stored amount rather than the last one shown, so a restore
+  /// in the meantime is not overwritten.
+  Future<void> _load() async {
+    final amount = await widget.quickAmount.load();
+    if (!mounted) return;
+    setState(() {
+      _controller.text = amount.toString();
+      _loaded = true;
+    });
+  }
+
   Future<void> _save() async {
-    final navigator = Navigator.of(context);
+    if (_saving) return;
     final parsed = int.tryParse(_controller.text);
-    if (parsed != null) await widget.quickAmount.save(parsed);
-    navigator.pop();
+    if (parsed == null ||
+        parsed < WaterQuickAmount.minMl ||
+        parsed > WaterQuickAmount.maxMl) {
+      setState(
+        () => _error = S
+            .of(context)
+            .waterQuickAmountRangeError(
+              WaterQuickAmount.minMl,
+              WaterQuickAmount.maxMl,
+            ),
+      );
+      return;
+    }
+    setState(() => _saving = true);
+    await widget.quickAmount.save(parsed);
+    if (mounted) Navigator.of(context).pop();
   }
 
   @override
@@ -53,11 +85,13 @@ class _WaterQuickAmountDialogState extends State<WaterQuickAmountDialog> {
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               textAlign: TextAlign.right,
+              enabled: _loaded,
               decoration: InputDecoration(
                 suffixText: s.mlLabel,
                 helperText:
                     '${WaterQuickAmount.minMl}–${WaterQuickAmount.maxMl} '
                     '${s.mlLabel}',
+                errorText: _error,
                 isDense: true,
               ),
               onSubmitted: (_) => _save(),
@@ -72,7 +106,10 @@ class _WaterQuickAmountDialogState extends State<WaterQuickAmountDialog> {
         ),
         Semantics(
           identifier: 'water-quick-amount-save',
-          child: TextButton(onPressed: _save, child: Text(s.dialogOKLabel)),
+          child: TextButton(
+            onPressed: _loaded && !_saving ? _save : null,
+            child: Text(s.dialogOKLabel),
+          ),
         ),
       ],
     );

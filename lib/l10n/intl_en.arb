@@ -1492,5 +1492,7 @@
   "@waterQuickAddedLabel": {"placeholders": {"amount": {"type": "int"}}},
   "waterQuickUndoLabel": "Undo",
   "waterQuickAmountLabel": "Own quick amount",
-  "waterQuickAmountDescription": "The amount of the third button in the water dialog, next to +250 ml and +500 ml."
+  "waterQuickAmountDescription": "The amount of the third button in the water dialog, next to +250 ml and +500 ml.",
+  "waterQuickAmountRangeError": "Enter {min} to {max} ml",
+  "@waterQuickAmountRangeError": {"placeholders": {"min": {"type": "int"}, "max": {"type": "int"}}}
 }

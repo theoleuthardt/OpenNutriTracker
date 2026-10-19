@@ -27,6 +27,7 @@ class LogWaterDialog extends StatefulWidget {
 class _LogWaterDialogState extends State<LogWaterDialog> {
   double _selectedMl = LogWaterDialog.sliderDefaultMl.toDouble();
   final _quickAmount = locator<WaterQuickAmount>();
+  bool _adding = false;
 
   @override
   void initState() {
@@ -80,7 +81,9 @@ class _LogWaterDialogState extends State<LogWaterDialog> {
                   Semantics(
                     identifier: 'log-water-quick-$id',
                     child: FilledButton.tonal(
-                      onPressed: () => _onQuickAddPressed(amount),
+                      onPressed: _adding
+                          ? null
+                          : () => _onQuickAddPressed(amount),
                       child: Text('+$amount ${s.mlLabel}'),
                     ),
                   ),
@@ -156,6 +159,7 @@ class _LogWaterDialogState extends State<LogWaterDialog> {
   /// Logs [amountMl] with one tap (#29), closes the dialog and offers to
   /// take it back.
   Future<void> _onQuickAddPressed(int amountMl) async {
+    setState(() => _adding = true);
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final s = S.of(context);
