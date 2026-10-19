@@ -14,6 +14,7 @@ import 'package:opennutritracker/core/data/data_source/intake_data_source.dart';
 import 'package:opennutritracker/core/data/data_source/recipe_data_source.dart';
 import 'package:opennutritracker/core/data/data_source/tracked_day_data_source.dart';
 import 'package:opennutritracker/core/data/data_source/user_activity_data_source.dart';
+import 'package:opennutritracker/core/data/data_source/user_data_source.dart';
 import 'package:opennutritracker/core/data/data_source/user_activity_dbo.dart';
 import 'package:opennutritracker/core/data/data_source/water_intake_data_source.dart';
 import 'package:opennutritracker/core/data/data_source/weight_log_data_source.dart';
@@ -22,6 +23,7 @@ import 'package:opennutritracker/core/data/dbo/intake_dbo.dart';
 import 'package:opennutritracker/core/data/dbo/meal_dbo.dart';
 import 'package:opennutritracker/core/data/dbo/recipe_dbo.dart';
 import 'package:opennutritracker/core/data/dbo/tracked_day_dbo.dart';
+import 'package:opennutritracker/core/data/dbo/user_dbo.dart';
 import 'package:opennutritracker/core/data/dbo/water_intake_dbo.dart';
 import 'package:opennutritracker/core/data/dbo/weight_log_dbo.dart';
 import 'package:opennutritracker/core/data/repository/config_repository.dart';
@@ -126,10 +128,13 @@ void main() {
       ),
       customMealBox: customMealBox,
       configBox: await open<ConfigDBO>('config'),
+      userBox: await open<UserDBO>('user'),
     );
     final extras = PersonalBackupExtras(
       WaterIntakeRepository(WaterIntakeDataSource(provider)),
       CustomMealDataSource(provider),
+      UserDataSource(provider),
+      ConfigDataSource(provider),
     );
     final configRepository = ConfigRepository(ConfigDataSource(provider));
     exporter = ExportDataUsecase(

@@ -78,6 +78,7 @@ class ImportDataUsecase {
     String weightLogJsonFileName,
     String customActivityTemplateJsonFileName, {
     String goalSettingsJsonFileName = 'goal_settings.json',
+    bool restoreProfileAndSettings = true,
   }) async {
     final archive = await _pickAndDecodeArchive();
 
@@ -140,7 +141,10 @@ class ImportDataUsecase {
             ),
           );
 
-    final restoreExtras = _extras?.prepareRestore(archive);
+    final restoreExtras = _extras?.prepareRestore(
+      archive,
+      includeProfileAndSettings: restoreProfileAndSettings,
+    );
 
     await _userActivityRepository.upsertAllUserActivityDBOs(userActivityDBOs);
     await _intakeRepository.upsertAllIntakeDBOs(intakeDBOs);
