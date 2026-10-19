@@ -10,6 +10,7 @@ import 'package:opennutritracker/core/data/dbo/water_intake_dbo.dart';
 import 'package:opennutritracker/core/data/dbo/weight_log_dbo.dart';
 import 'package:opennutritracker/core/utils/hive_db_provider.dart';
 import 'package:opennutritracker/core/utils/profile_box_scope.dart';
+import 'package:opennutritracker/core/utils/user_image_storage.dart';
 import 'package:opennutritracker/features/settings/domain/export_import_failure.dart';
 import 'package:opennutritracker/features/settings/domain/goal_settings_backup.dart';
 import 'package:opennutritracker/features/settings/domain/personal_backup_extras.dart';
@@ -103,13 +104,19 @@ class ProfilesBackup {
           goalSettingsJsonFileName: goalSettingsFileName,
         );
         for (final file in folder.files) {
-          if (!profileFileNames.contains(file.name)) continue;
-          archive.addFile(
-            ArchiveFile.bytes(
-              '$folderPrefix${profile.id}/${file.name}',
-              file.content as List<int>,
-            ),
-          );
+          if (profileFileNames.contains(file.name)) {
+            archive.addFile(
+              ArchiveFile.bytes(
+                '$folderPrefix${profile.id}/${file.name}',
+                file.content as List<int>,
+              ),
+            );
+          } else if (_isPhoto(file.name) &&
+              archive.findFile(file.name) == null) {
+            archive.addFile(
+              ArchiveFile.bytes(file.name, file.content as List<int>),
+            );
+          }
         }
       } finally {
         await _scopes.close(profile);
@@ -230,15 +237,22 @@ class ProfilesBackup {
   }
 
   /// Clears the logs a restore replaces. The profile body data and the goals
-  /// stay: the restore overwrites them when the user asked for it.
+  /// stay: the restore overwrites them when the user asked for it. Fasting
+  /// sessions stay too until the backup carries them (#28).
   static Future<void> _clearProfileData(HiveDBProvider db) async {
     await db.intakeBox.clear();
     await db.userActivityBox.clear();
     await db.trackedDayBox.clear();
     await db.weightLogBox.clear();
     await db.waterIntakeBox.clear();
-    await db.fastingBox.clear();
   }
+
+  /// A photo entry of a profile's folder export (an intake photo of that
+  /// profile, or a shared custom meal or recipe photo). Photos live at the
+  /// top level, where upstream's import writes them back.
+  static bool _isPhoto(String name) =>
+      name.startsWith('${UserImageKind.meal.subdir}/') ||
+      name.startsWith('${UserImageKind.recipe.subdir}/');
 
   static Archive _folder(Archive archive, String profileId) {
     final prefix = '$folderPrefix$profileId/';

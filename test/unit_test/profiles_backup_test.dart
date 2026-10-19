@@ -417,6 +417,58 @@ void main() {
     },
   );
 
+  test(
+    'a photo on another profile\'s diary entry travels and comes back',
+    () async {
+      const slug = 'meal_images/partner-lunch.webp';
+      final photo = File('${tempDir.path}/$slug');
+      await photo.parent.create(recursive: true);
+      await photo.writeAsBytes([4, 2], flush: true);
+      final device = await twoProfileDevice();
+      final withPhoto = intake('partner-photo')
+        ..meal = MealDBO.fromJson({
+          'name': 'Lunch',
+          'mealQuantity': '100',
+          'mealUnit': 'g',
+          'source': 'custom',
+          'localImagePath': slug,
+          'nutriments': {'energyKcal100': 300.0},
+        });
+      await device.boxesOf('partner').intakeBox.add(withPhoto);
+
+      final archive = await exportFrom(device);
+      expect(archive.findFile(slug), isNotNull);
+
+      await photo.delete();
+      final fresh = await _Device.create();
+      await fresh.addProfile('device-default', makeActive: true);
+      await importInto(fresh, archive);
+
+      expect(await photo.readAsBytes(), [4, 2]);
+    },
+  );
+
+  test(
+    'replacing keeps fasting sessions, which the backup does not carry yet',
+    () async {
+      final archive = await exportFrom(await twoProfileDevice());
+      final device = await _Device.create();
+      final active = await device.addProfile('me', makeActive: true);
+      await active.fastingBox.put(
+        'f1',
+        FastingSessionDBO(
+          id: 'f1',
+          startedAt: DateTime(2026, 10, 1, 20),
+          targetDurationMinutes: 960,
+        ),
+      );
+
+      await importInto(device, archive, replaceExisting: true);
+
+      expect(active.fastingBox.length, 1);
+    },
+  );
+
   test('a backup without profiles.json imports as before', () async {
     final archive = await exportFrom(await twoProfileDevice());
     final upstreamShaped = Archive();

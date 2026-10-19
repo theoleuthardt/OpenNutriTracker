@@ -368,7 +368,8 @@ active one (`ProfilesBackup`):
 - Each other profile has a folder `profiles/<id>/` with its per-profile files:
   `user_activity.json`, `user_intake.json`, `user_tracked_day.json`,
   `weight_log.json`, `goal_settings.json`, `water_intake.json`,
-  `user_profile.json`. Profile pictures are not part of the bundle.
+  `user_profile.json`. Photos on their diary entries go to the top level
+  with the others. Profile pictures are not part of the bundle.
 
 On import the top level goes into the **active** profile (which takes the main
 profile's name when *Also restore profile, goals and settings* is on) and each
@@ -379,10 +380,11 @@ two diaries never end up in one. Every folder is decoded before the first
 write.
 
 **Replace everything on this device** (import dialog, JSON only, asks for
-confirmation) first clears the diary, activities, tracked days, weight, water
-and fasting logs of the active profile and of every profile in the backup,
-plus the saved custom meals, recipes and activity templates, and deletes the
-profiles that are not in the backup. The profile body data and the goals are
+confirmation) first clears the diary, activities, tracked days, weight and
+water logs of the active profile and of every profile in the backup, plus the
+saved custom meals, recipes and activity templates, and deletes the profiles
+that are not in the backup. Fasting sessions are kept until the backup
+carries them. The profile body data and the goals are
 overwritten by the backup (when restoring them is switched on), not cleared.
 
 ## CSV schema
