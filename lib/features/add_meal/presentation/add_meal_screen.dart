@@ -548,28 +548,32 @@ class _AddMealScreenState extends State<AddMealScreen> {
 
   /// The favourites (#39), filtered by [query] as it is typed.
   Widget _buildFavorites(BuildContext context, String query) =>
-      FutureBuilder<List<MealEntity>>(
-        future: _favorites.favoriteMeals(query: query),
-        builder: (context, snapshot) {
-          final meals = snapshot.data;
-          if (meals == null) return const SizedBox();
-          if (meals.isEmpty) {
-            return query.trim().isEmpty
-                ? EmptyHint(
-                    icon: Icons.star_outline_rounded,
-                    title: S.of(context).favoritesEmptyTitle,
-                    subtitle: S.of(context).favoritesEmptySubtitle,
-                  )
-                : NoResultsWidget(
-                    onScanBarcode: _onBarcodeIconPressed,
-                    onCreateCustomFood: () => _onCustomAddButtonPressed(false),
-                  );
-          }
-          return BlocBuilder<AddMealBloc, AddMealState>(
-            bloc: _favoritesUnitsBloc,
-            builder: (context, state) {
-              final imperial =
-                  state is AddMealLoadedState && state.usesImperialUnits;
+      BlocBuilder<AddMealBloc, AddMealState>(
+        bloc: _favoritesUnitsBloc,
+        builder: (context, state) {
+          final imperial =
+              state is AddMealLoadedState && state.usesImperialUnits;
+          return FutureBuilder<List<MealEntity>>(
+            future: _favorites.favoriteMeals(query: query),
+            builder: (context, snapshot) {
+              final meals = snapshot.data;
+              if (snapshot.connectionState != ConnectionState.done ||
+                  meals == null) {
+                return const SizedBox();
+              }
+              if (meals.isEmpty) {
+                return query.trim().isEmpty
+                    ? EmptyHint(
+                        icon: Icons.star_outline_rounded,
+                        title: S.of(context).favoritesEmptyTitle,
+                        subtitle: S.of(context).favoritesEmptySubtitle,
+                      )
+                    : NoResultsWidget(
+                        onScanBarcode: _onBarcodeIconPressed,
+                        onCreateCustomFood: () =>
+                            _onCustomAddButtonPressed(imperial),
+                      );
+              }
               return ListView.builder(
                 itemCount: meals.length,
                 itemBuilder: (context, index) =>
