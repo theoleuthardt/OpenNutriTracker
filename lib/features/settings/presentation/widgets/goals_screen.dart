@@ -128,9 +128,18 @@ class _GoalsScreenState extends State<GoalsScreen> {
   }
 
   Future<void> _editSplit() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final failed = S.of(context).goalsLoadFailed;
     await widget.onEditSplit(context);
-    final split = await _store.loadSplit();
-    if (mounted) setState(() => _split = split);
+    try {
+      final split = await _store.loadSplit();
+      if (mounted) setState(() => _split = split);
+    } catch (error, stackTrace) {
+      Logger(
+        'GoalsScreen',
+      ).warning('Could not reload the split', error, stackTrace);
+      messenger.showSnackBar(SnackBar(content: Text(failed)));
+    }
   }
 
   /// Validates what the current modes show; a value the other mode would
