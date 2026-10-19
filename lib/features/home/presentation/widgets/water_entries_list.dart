@@ -28,6 +28,7 @@ class WaterEntriesList extends StatefulWidget {
 
 class _WaterEntriesListState extends State<WaterEntriesList> {
   List<WaterIntakeEntity> _entries = const [];
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -53,11 +54,14 @@ class _WaterEntriesListState extends State<WaterEntriesList> {
   }
 
   Future<void> _load() async {
+    final generation = ++_loadGeneration;
     final day = widget.day;
     final entries = day == null
         ? await widget.log.entriesForToday()
         : await widget.log.entriesFor(day);
-    if (mounted && day == widget.day) setState(() => _entries = entries);
+    if (mounted && generation == _loadGeneration) {
+      setState(() => _entries = entries);
+    }
   }
 
   Future<void> _confirmDelete(WaterIntakeEntity entry) async {

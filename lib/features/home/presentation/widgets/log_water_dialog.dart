@@ -41,6 +41,7 @@ class _LogWaterDialogState extends State<LogWaterDialog> {
   Widget build(BuildContext context) {
     final s = S.of(context);
     return AlertDialog(
+      scrollable: true,
       shape: Dimens.shapeL,
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
