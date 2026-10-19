@@ -746,6 +746,9 @@ class _EditMealScreenState extends State<EditMealScreen> {
       message = error.failure == TextRecognitionFailure.unavailable
           ? s.labelScanUnavailable
           : s.labelScanFailed;
+    } catch (error, stackTrace) {
+      log.warning('Nutrition table scan failed', error, stackTrace);
+      message = s.labelScanFailed;
     } finally {
       if (mounted) setState(() => _scanningLabel = false);
     }

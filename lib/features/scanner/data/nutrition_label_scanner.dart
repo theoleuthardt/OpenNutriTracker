@@ -7,9 +7,15 @@ import 'package:opennutritracker/features/scanner/util/nutrition_label_parser.da
 Future<String?> _pickWithImagePicker(ImageSource source) async =>
     (await ImagePicker().pickImage(source: source))?.path;
 
+/// Deletes the photo; one that cannot be deleted stays in the app's
+/// temporary folder, which iOS empties on its own.
 Future<void> _deleteFile(String path) async {
-  final photo = File(path);
-  if (await photo.exists()) await photo.delete();
+  try {
+    final photo = File(path);
+    if (await photo.exists()) await photo.delete();
+  } on FileSystemException {
+    return;
+  }
 }
 
 /// Photo of a nutrition table to values: takes or picks the photo, reads

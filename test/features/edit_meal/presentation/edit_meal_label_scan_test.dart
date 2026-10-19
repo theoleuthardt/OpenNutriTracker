@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
@@ -154,6 +155,35 @@ void main() {
 
     expect(fieldText(tester, l10nEn.mealEnergyLabel), '');
     expect(find.text(l10nEn.labelScanCheckField), findsNothing);
+  });
+
+  testWidgets('a denied camera says the photo could not be read', (
+    tester,
+  ) async {
+    getIt.registerLazySingleton<NutritionLabelScanner>(
+      () => NutritionLabelScanner(
+        _FakeRecognizer(label),
+        pickImage: (_) async =>
+            throw PlatformException(code: 'camera_access_denied'),
+      ),
+    );
+    await pumpEditMeal(
+      tester,
+      EditMealScreenArguments(
+        DateTime(2026, 10, 19),
+        MealEntity.empty(),
+        IntakeTypeEntity.snack,
+        false,
+      ),
+    );
+
+    await tester.tap(find.text(l10nEn.labelScanAction));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10nEn.labelScanCamera));
+    await tester.pumpAndSettle();
+
+    expect(find.text(l10nEn.labelScanFailed), findsOneWidget);
+    expect(find.text(l10nEn.labelScanAction), findsOneWidget);
   });
 
   testWidgets('a photo without a table says so and fills nothing', (
