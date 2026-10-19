@@ -368,9 +368,10 @@ how tracked days are keyed. Theme and language apply on the next app start.
 
 Added by this fork (#32). The profile's own goals next to upstream's
 `goal_settings.json`: a fixed kcal goal instead of the calculated one, and
-macro goals in grams instead of a split. Unset values (or a missing file)
-mean the app's calculation. On restore it replaces the profile's own goals
-when *Also restore profile, goals and settings* is on.
+macro goals in grams instead of a split. Unset values mean the app's
+calculation. On restore it replaces the profile's own goals when *Also
+restore profile, goals and settings* is on; a backup without the file (from
+before #32) leaves them as they are, like the fork's other optional files.
 
 ```jsonc
 {
