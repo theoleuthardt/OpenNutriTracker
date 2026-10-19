@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:opennutritracker/features/add_meal/data/data_sources/local_bls_catalog.dart';
 import 'package:opennutritracker/features/add_meal/data/dto/sp/sp_const.dart';
 import 'package:opennutritracker/features/add_meal/data/dto/sp/sp_food_dto.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
@@ -27,6 +30,10 @@ void main() {
       ('M150000', 'Buttermilch'),
       ('M130300', 'Kefir'),
       ('M1A5200', 'H-Milch fettarm, laktosefrei'),
+      ('M161000', 'Süßmolke'),
+      ('M182500', 'Kondensmilch'),
+      ('C650000', 'Reisdrink'),
+      ('H842400', 'Sojadrink gesüßt'),
       ('N110000', 'Getränk (Gruppe N)'),
       ('P100000', 'alkoholisches Getränk (Gruppe P)'),
     ]) {
@@ -68,6 +75,25 @@ void main() {
       'g',
     );
     expect(_bls('M2N6400', name: 'Cream yogurt sweetened').mealUnit, 'g');
+  });
+
+  test('in the shipped BLS, every food called liquid is one', () {
+    final catalog = LocalBlsCatalog.decode(
+      File('assets/bls/bls_4_0.json.gz').readAsBytesSync(),
+    );
+    final liquidWords = RegExp(
+      'saft|nektar|smoothie|milch|kefir|molke|drink|getränk|shake|ayran|'
+      'trinkjoghurt',
+    );
+    final wrong = [
+      for (final food in catalog.foods)
+        if (!SPConst.blsBeverageGroups.contains(food.code[0]) &&
+            SPConst.isBlsLiquid(food.code, names: [food.nameDe, food.nameEn]) &&
+            !liquidWords.hasMatch(food.nameDe.toLowerCase()))
+          '${food.code} ${food.nameDe}',
+    ];
+
+    expect(wrong, isEmpty);
   });
 
   test('the per-100 basis stays the same for liquids', () {
