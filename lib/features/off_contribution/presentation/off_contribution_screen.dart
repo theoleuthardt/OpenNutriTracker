@@ -45,8 +45,13 @@ class _OffContributionScreenState extends State<OffContributionScreen> {
     });
   }
 
-  Future<void> _save(OffContributionSettings settings) async {
-    final updated = settings.copyWith(
+  /// Applies [change] to the current settings, takes over the text fields
+  /// and stores the result.
+  Future<void> _save([
+    OffContributionSettings Function(OffContributionSettings current)? change,
+  ]) async {
+    final current = _settings!;
+    final updated = (change?.call(current) ?? current).copyWith(
       userId: _userId.text.trim(),
       password: _password.text,
     );
@@ -77,7 +82,7 @@ class _OffContributionScreenState extends State<OffContributionScreen> {
                     title: Text(l10n.offContributionEnable),
                     value: settings.enabled,
                     onChanged: (value) =>
-                        _save(settings.copyWith(enabled: value)),
+                        _save((current) => current.copyWith(enabled: value)),
                   ),
                 ),
                 const SizedBox(height: Dimens.spacing8),
@@ -92,7 +97,7 @@ class _OffContributionScreenState extends State<OffContributionScreen> {
                         borderRadius: Dimens.borderRadiusM,
                       ),
                     ),
-                    onChanged: (_) => _save(settings),
+                    onChanged: (_) => _save(),
                   ),
                 ),
                 const SizedBox(height: Dimens.spacing16),
@@ -109,7 +114,7 @@ class _OffContributionScreenState extends State<OffContributionScreen> {
                         borderRadius: Dimens.borderRadiusM,
                       ),
                     ),
-                    onChanged: (_) => _save(settings),
+                    onChanged: (_) => _save(),
                   ),
                 ),
                 const SizedBox(height: Dimens.spacing8),
@@ -120,8 +125,9 @@ class _OffContributionScreenState extends State<OffContributionScreen> {
                     title: Text(l10n.offContributionTestServer),
                     subtitle: Text(l10n.offContributionTestServerHelp),
                     value: settings.useTestServer,
-                    onChanged: (value) =>
-                        _save(settings.copyWith(useTestServer: value)),
+                    onChanged: (value) => _save(
+                      (current) => current.copyWith(useTestServer: value),
+                    ),
                   ),
                 ),
               ],
