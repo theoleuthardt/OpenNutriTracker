@@ -98,6 +98,34 @@ class SPConst {
   /// Used to default drinks to millilitre entry in the app.
   static const blsBeverageGroups = {'N', 'P'};
 
+  /// BLS code prefixes of liquids outside the beverage groups (#104):
+  /// milk, kefir, buttermilk, whey and condensed milk, and the plant drinks
+  /// made from rice, oats, almonds and soya.
+  static const blsLiquidPrefixes = [
+    'M11',
+    'M13',
+    'M15',
+    'M16',
+    'M18',
+    'C65',
+    'C66',
+    'H800',
+    'H841',
+    'H842',
+  ];
+
+  /// Whether the BLS food [code] is measured in millilitres: the beverage
+  /// groups, the liquids in [blsLiquidPrefixes], and in the fruit group F
+  /// the juices, nectars and smoothies, whose fifth code character is 6
+  /// or 7 (concentrates and the fruit itself are not).
+  static bool isBlsLiquid(String code) {
+    final upper = code.toUpperCase();
+    if (upper.isEmpty) return false;
+    if (blsBeverageGroups.contains(upper[0])) return true;
+    if (blsLiquidPrefixes.any(upper.startsWith)) return true;
+    return upper.length > 4 && upper[0] == 'F' && '67'.contains(upper[4]);
+  }
+
   /// Human-readable names of the backend food sources, keyed by
   /// food_source.code. Proper nouns — shown as-is in every app language.
   static const foodSourceDisplayNames = <String, String>{
