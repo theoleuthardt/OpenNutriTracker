@@ -311,8 +311,9 @@ DriReference? getReferenceFor({
   }
 }
 
-/// D-A-CH reference values of the German, Austrian and Swiss nutrition
-/// societies (#49), keyed like [_driTable]: per nutrient the male and the
+/// Reference values of the German and Austrian nutrition societies
+/// (DGE/ÖGE, formerly D-A-CH with the Swiss SGE until 2022; #49), keyed
+/// like [_driTable]: per nutrient the male and the
 /// female values for the DGE age bands 19 to under 25, 25 to under 51, 51
 /// to under 65 and 65 and older, in the panel's units.
 ///
@@ -332,14 +333,26 @@ DriReference? getReferenceFor({
 /// * Zinc: the values for a medium phytate intake.
 /// * Vitamin D: the estimate for when the skin makes none.
 /// * Fibre: the guide value of at least 30 g.
+/// * Protein (2017 derivation, see [getDgeReferenceFor]): 0.8 g per kg body
+///   weight, from 65 1.0 g; without a user the midpoint of the 25 to under
+///   51 values per day, 57 g for men and 48 g for women.
 ///
 /// Saturated fat, sugar, cholesterol, mono-, polyunsaturated and trans fat
 /// have no DGE value; the panel falls back to its IOM/FDA reference.
 const Map<String, (List<double>, List<double>)> _dgeTable = {
   NutrientPanelKeys.fiber: ([30, 30, 30, 30], [30, 30, 30, 30]),
-  NutrientPanelKeys.sodium: ([2400, 2400, 2400, 2400], [2400, 2400, 2400, 2400]),
-  NutrientPanelKeys.potassium: ([4000, 4000, 4000, 4000], [4000, 4000, 4000, 4000]),
-  NutrientPanelKeys.calcium: ([1000, 1000, 1000, 1000], [1000, 1000, 1000, 1000]),
+  NutrientPanelKeys.sodium: (
+    [2400, 2400, 2400, 2400],
+    [2400, 2400, 2400, 2400],
+  ),
+  NutrientPanelKeys.potassium: (
+    [4000, 4000, 4000, 4000],
+    [4000, 4000, 4000, 4000],
+  ),
+  NutrientPanelKeys.calcium: (
+    [1000, 1000, 1000, 1000],
+    [1000, 1000, 1000, 1000],
+  ),
   NutrientPanelKeys.phosphorus: ([550, 550, 550, 550], [550, 550, 550, 550]),
   NutrientPanelKeys.magnesium: ([350, 350, 350, 350], [300, 300, 300, 300]),
   NutrientPanelKeys.iron: ([11, 11, 11, 11], [16, 16, 14, 14]),
@@ -363,10 +376,16 @@ int _dgeBand(int age) {
 ///
 /// Users are routed like [getReferenceFor]; without a [user] the value is
 /// the midpoint of the female and male values for 25 to under 51.
-DriReference? getDgeReferenceFor({
-  required String nutrient,
-  UserEntity? user,
-}) {
+DriReference? getDgeReferenceFor({required String nutrient, UserEntity? user}) {
+  if (nutrient == NutrientPanelKeys.protein) {
+    return DriReference(
+      amount: user == null
+          ? (57 + 48) / 2
+          : user.weightKG * (user.age < 65 ? 0.8 : 1.0),
+      unit: 'g',
+      basis: 'DGE',
+    );
+  }
   final row = _dgeTable[nutrient];
   if (row == null) return null;
   final (male, female) = row;

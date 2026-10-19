@@ -445,7 +445,7 @@ class _DailyNutrientPanelState extends State<DailyNutrientPanel> {
                     visualDensity: VisualDensity.compact,
                     constraints: const BoxConstraints(),
                     padding: const EdgeInsets.symmetric(horizontal: Dimens.spacing8),
-                    onPressed: () => _showDataDisclaimer(context, s),
+                    onPressed: () => _showDataDisclaimer(context, s, standard),
                   ),
                 ),
               ],
@@ -533,7 +533,12 @@ class _DailyNutrientPanelState extends State<DailyNutrientPanel> {
     ];
   }
 
-  void _showDataDisclaimer(BuildContext context, S s) {
+  void _showDataDisclaimer(
+    BuildContext context,
+    S s,
+    NutrientReferenceStandard standard,
+  ) {
+    final dge = standard == NutrientReferenceStandard.dge;
     showDialog<void>(
       context: context,
       builder: (dialogContext) {
@@ -545,17 +550,15 @@ class _DailyNutrientPanelState extends State<DailyNutrientPanel> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(s.driPanelInfoBody),
+                Text(dge ? s.driPanelDgeInfoBody : s.driPanelInfoBody),
                 const SizedBox(height: 12.0),
                 Text(s.diaryNutrientPanelDataDisclaimer),
-                const SizedBox(height: 12.0),
-                Text(s.driPanelDgeSourceNote),
                 const SizedBox(height: 16.0),
                 Semantics(
                   identifier: 'dri-panel-info-link',
                   child: InkWell(
                     onTap: () async {
-                      final uri = Uri.parse(driSourceUrl);
+                      final uri = Uri.parse(dge ? dgeSourceUrl : driSourceUrl);
                       // Best-effort link launch — silently no-ops if the
                       // platform reports it cannot handle the URL, which is
                       // friendlier than throwing in front of the user.
@@ -567,7 +570,7 @@ class _DailyNutrientPanelState extends State<DailyNutrientPanel> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
                       child: Text(
-                        s.driPanelInfoLinkLabel,
+                        dge ? s.driPanelDgeLinkLabel : s.driPanelInfoLinkLabel,
                         style:
                             Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(
                                   color: Theme.of(dialogContext)

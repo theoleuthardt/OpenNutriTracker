@@ -113,4 +113,10 @@ void main() {
       'mg',
     );
   });
+
+  test('protein follows body weight, more from 65', () {
+    expect(_dge(NutrientPanelKeys.protein, _user(40, male)), closeTo(56, 1e-9));
+    expect(_dge(NutrientPanelKeys.protein, _user(70, female)), 70);
+    expect(_dge(NutrientPanelKeys.protein, null), 52.5);
+  });
 }
