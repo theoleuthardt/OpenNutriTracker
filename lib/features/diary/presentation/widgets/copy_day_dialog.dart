@@ -9,7 +9,10 @@ typedef CopyDayChoice = ({DateTime day, bool activities, bool water});
 /// Asks for the target day of a whole-day copy and whether its activities
 /// and water go along. Pops a [CopyDayChoice], or null on cancel.
 class CopyDayDialog extends StatefulWidget {
-  const CopyDayDialog({super.key});
+  /// The target day preselected in the date step.
+  final DateTime? initialDay;
+
+  const CopyDayDialog({super.key, this.initialDay});
 
   @override
   State<CopyDayDialog> createState() => _CopyDayDialogState();
@@ -23,7 +26,7 @@ class _CopyDayDialogState extends State<CopyDayDialog> {
     final navigator = Navigator.of(context);
     final target = await showDialog<CopyTarget>(
       context: context,
-      builder: (_) => const CopyDialog(),
+      builder: (_) => CopyDialog(initialDay: widget.initialDay),
     );
     if (target != null) {
       navigator.pop<CopyDayChoice>((

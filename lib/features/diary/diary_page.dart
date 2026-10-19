@@ -144,6 +144,7 @@ class _DiaryPageState extends State<DiaryPage> with WidgetsBindingObserver {
                 onCopyIntake: _onCopyIntakeItems,
                 onCopyActivity: _onCopyActivityItem,
                 onCopyDay: _onCopyDay,
+                copyDefaultDay: _currentDate,
                 onEditIntake: _onEditIntakeItem,
                 onEditActivity: _onEditActivityItem,
                 usesImperialUnits: usesImperialUnits,
@@ -252,15 +253,27 @@ class _DiaryPageState extends State<DiaryPage> with WidgetsBindingObserver {
     ),
   );
 
+  /// Runs [copy] and refreshes the views whether or not it got through,
+  /// since a failed copy may have written part of its entries.
   Future<void> _copy(Future<void> Function() copy) async {
     final messenger = ScaffoldMessenger.of(context);
     final copied = S.of(context).copiedLabel;
-    await copy();
-    _diaryBloc.add(const LoadDiaryYearEvent());
-    _calendarDayBloc.add(RefreshCalendarDayEvent());
-    _diaryBloc.updateHomePage();
-    locator<DayWaterLog>().markChanged();
-    messenger.showSnackBar(SnackBar(content: Text(copied)));
+    final failed = S.of(context).copyFailedLabel;
+    var succeeded = false;
+    try {
+      await copy();
+      succeeded = true;
+    } catch (error, stackTrace) {
+      log.warning('Copy failed', error, stackTrace);
+    } finally {
+      _diaryBloc.add(const LoadDiaryYearEvent());
+      _calendarDayBloc.add(RefreshCalendarDayEvent());
+      _diaryBloc.updateHomePage();
+      locator<DayWaterLog>().markChanged();
+    }
+    messenger.showSnackBar(
+      SnackBar(content: Text(succeeded ? copied : failed)),
+    );
   }
 
   void _onEditIntakeItem(

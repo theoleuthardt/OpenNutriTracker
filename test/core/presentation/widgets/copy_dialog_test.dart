@@ -164,5 +164,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(DropdownButton<AddMealType>), findsNothing);
+    expect(find.text(l10nEn.copyTargetTitle), findsOneWidget);
   });
 }

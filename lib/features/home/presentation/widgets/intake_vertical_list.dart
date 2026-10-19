@@ -43,6 +43,8 @@ class IntakeVerticalList extends StatefulWidget {
   final Function(BuildContext, IntakeEntity, bool)? onItemTappedCallback;
   final Function(List<IntakeEntity> intakes, CopyTarget target)?
       onCopyIntakeCallback;
+  /// The day the copy dialog preselects (#40); the calendar today when null.
+  final DateTime? copyDefaultDay;
   final TrackedDayEntity? trackedDayEntity;
   // #150: optional recommended kcal target for this meal section. When
   // supplied and > 0, the section header shows "consumed / target kcal" so
@@ -75,6 +77,7 @@ class IntakeVerticalList extends StatefulWidget {
     this.onItemDragCallback,
     this.onItemTappedCallback,
     this.onCopyIntakeCallback,
+    this.copyDefaultDay,
     this.trackedDayEntity,
     this.mealKcalTarget,
     this.sortType,
@@ -209,8 +212,9 @@ class _IntakeVerticalListState extends State<IntakeVerticalList> {
                         (VerticalListPopupMenuSelections selection) async {
                       switch (selection) {
                         case VerticalListPopupMenuSelections.onCopy:
-                          final copyDialog =
-                              CopyDialog(initialValue: widget.addMealType);
+                          final copyDialog = CopyDialog(
+                              initialValue: widget.addMealType,
+                              initialDay: widget.copyDefaultDay);
                           final target = await showDialog<CopyTarget>(
                               context: context,
                               builder: (context) => copyDialog);

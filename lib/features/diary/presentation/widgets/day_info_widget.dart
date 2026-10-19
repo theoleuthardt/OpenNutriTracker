@@ -74,6 +74,9 @@ class DayInfoWidget extends StatefulWidget {
 
   /// Copies the whole day (#40); no "Copy day" action when null.
   final Function(CopyDayChoice choice)? onCopyDay;
+
+  /// The logical today, preselected as the copy target.
+  final DateTime? copyDefaultDay;
   final Function(BuildContext context, IntakeEntity intake, bool usesImperialUnits)?
       onEditIntake;
   final Function(BuildContext context, UserActivityEntity activity)?
@@ -97,6 +100,7 @@ class DayInfoWidget extends StatefulWidget {
     required this.onCopyIntake,
     required this.onCopyActivity,
     this.onCopyDay,
+    this.copyDefaultDay,
     this.onEditIntake,
     this.onEditActivity,
     this.breakfastKcalTarget = 0,
@@ -333,6 +337,7 @@ class _DayInfoWidgetState extends State<DayInfoWidget> {
                 onItemLongPressedCallback: onIntakeItemLongPressed,
                 onItemTappedCallback: widget.onEditIntake,
                 onCopyIntakeCallback: widget.onCopyIntake,
+                copyDefaultDay: widget.copyDefaultDay,
                 usesImperialUnits: widget.usesImperialUnits,
                 showMealMacros: widget.showMealMacros,
                 trackedDayEntity: trackedDay,
@@ -355,6 +360,7 @@ class _DayInfoWidgetState extends State<DayInfoWidget> {
                 usesImperialUnits: widget.usesImperialUnits,
                 showMealMacros: widget.showMealMacros,
                 onCopyIntakeCallback: widget.onCopyIntake,
+                copyDefaultDay: widget.copyDefaultDay,
                 trackedDayEntity: trackedDay,
                 mealKcalTarget: widget.lunchKcalTarget,
                 sortType: _sortByMeal[IntakeTypeEntity.lunch],
@@ -373,6 +379,7 @@ class _DayInfoWidgetState extends State<DayInfoWidget> {
                 onItemLongPressedCallback: onIntakeItemLongPressed,
                 onItemTappedCallback: widget.onEditIntake,
                 onCopyIntakeCallback: widget.onCopyIntake,
+                copyDefaultDay: widget.copyDefaultDay,
                 usesImperialUnits: widget.usesImperialUnits,
                 showMealMacros: widget.showMealMacros,
                 mealKcalTarget: widget.dinnerKcalTarget,
@@ -394,6 +401,7 @@ class _DayInfoWidgetState extends State<DayInfoWidget> {
                 usesImperialUnits: widget.usesImperialUnits,
                 showMealMacros: widget.showMealMacros,
                 onCopyIntakeCallback: widget.onCopyIntake,
+                copyDefaultDay: widget.copyDefaultDay,
                 trackedDayEntity: trackedDay,
                 mealKcalTarget: widget.snackKcalTarget,
                 sortType: _sortByMeal[IntakeTypeEntity.snack],
@@ -458,6 +466,7 @@ class _DayInfoWidgetState extends State<DayInfoWidget> {
 
     final copyDialog = CopyDialog(
       initialValue: defaultMealType,
+      initialDay: widget.copyDefaultDay,
     );
     final target = await showDialog<CopyTarget>(
       context: context,
@@ -474,7 +483,7 @@ class _DayInfoWidgetState extends State<DayInfoWidget> {
   ) async {
     final target = await showDialog<CopyTarget>(
       context: context,
-      builder: (context) => const CopyDialog(),
+      builder: (context) => CopyDialog(initialDay: widget.copyDefaultDay),
     );
     if (target != null) widget.onCopyActivity(activity, target.day);
   }
@@ -482,7 +491,8 @@ class _DayInfoWidgetState extends State<DayInfoWidget> {
   Future<void> _showCopyDayDialog(BuildContext context) async {
     final choice = await showDialog<CopyDayChoice>(
       context: context,
-      builder: (context) => const CopyDayDialog(),
+      builder: (context) =>
+          CopyDayDialog(initialDay: widget.copyDefaultDay),
     );
     if (choice != null) widget.onCopyDay?.call(choice);
   }

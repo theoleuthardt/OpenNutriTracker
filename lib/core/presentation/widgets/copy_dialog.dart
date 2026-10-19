@@ -10,7 +10,8 @@ import 'package:opennutritracker/generated/l10n.dart';
 class CopyDialog extends StatefulWidget {
   final AddMealType? initialValue;
 
-  /// The day preselected as the target; today when null.
+  /// The day preselected as the target; the calendar today when null.
+  /// Callers that know the configured day start pass the logical today.
   final DateTime? initialDay;
 
   const CopyDialog({super.key, this.initialValue, this.initialDay});
@@ -49,7 +50,11 @@ class CopyDialogState extends State<CopyDialog> {
   Widget build(BuildContext context) {
     final mealType = _selectedValue;
     return AlertDialog(
-      title: Text(S.of(context).copyDialogTitle),
+      title: Text(
+        mealType != null
+            ? S.of(context).copyDialogTitle
+            : S.of(context).copyTargetTitle,
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
