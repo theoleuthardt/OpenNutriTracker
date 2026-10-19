@@ -108,7 +108,8 @@ class PersonalBackupExtras {
   /// `meal_images/` entries, which upstream's import already writes back.
   ///
   /// With [includeProfileAndSettings] false the profile and the app settings
-  /// on the device stay as they are.
+  /// on the device stay as they are; `ImportDataUsecase` then also skips the
+  /// goal settings.
   Future<void> Function() prepareRestore(
     Archive archive, {
     bool includeProfileAndSettings = true,
@@ -187,6 +188,19 @@ class PersonalBackupExtras {
     );
   }
 
+  /// [jsonDecode] of [file], but a number too large for a double (`1e400`)
+  /// is a [FormatException], as in upstream's import: stored on the device it
+  /// would make the next JSON export throw.
+  static Object? _decodeFinite(ArchiveFile file) => jsonDecode(
+    utf8.decode(file.content as List<int>),
+    reviver: (key, value) {
+      if (value is double && !value.isFinite) {
+        throw FormatException('Not a finite number', '$key');
+      }
+      return value;
+    },
+  );
+
   static void _addJson(Archive archive, String name, Object json) {
     archive.addFile(ArchiveFile.bytes(name, utf8.encode(jsonEncode(json))));
   }
@@ -199,7 +213,7 @@ class PersonalBackupExtras {
     return ExportImportFailure.guardSync(
       ExportImportFailureReason.unreadableOrWrongFormat,
       'Could not parse ${file.name}',
-      () => (jsonDecode(utf8.decode(file.content as List<int>)) as List)
+      () => (_decodeFinite(file) as List)
           .cast<Map<String, dynamic>>()
           .map(fromJson)
           .toList(),
@@ -214,10 +228,7 @@ class PersonalBackupExtras {
     return ExportImportFailure.guardSync(
       ExportImportFailureReason.unreadableOrWrongFormat,
       'Could not parse ${file.name}',
-      () => fromJson(
-        jsonDecode(utf8.decode(file.content as List<int>))
-            as Map<String, dynamic>,
-      ),
+      () => fromJson(_decodeFinite(file) as Map<String, dynamic>),
     );
   }
 }

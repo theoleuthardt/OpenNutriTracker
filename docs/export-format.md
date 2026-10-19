@@ -57,7 +57,7 @@ Upstream leaves the **profile box** (height, birthday, PAL, goal) out of the
 bundle. This fork adds it as `user_profile.json`, together with the device-wide
 settings in `app_settings.json` (see below), so a full restore after a
 reinstall brings back everything. The import dialog has a switch to leave the
-profile and the settings on the device untouched. Your logged **weight
+profile, the goals and the settings on the device untouched. Your logged **weight
 history** travels as `weight_log.json`, and the **goal settings** under
 Settings → Calculations as `goal_settings.json`
 ([#1363](https://github.com/simonoppowa/OpenNutriTracker/issues/1363)).
@@ -270,12 +270,10 @@ Only goals that belong to a profile are in the file:
   They belong in this file once they apply beyond the day they were set on
   ([#1316](https://github.com/simonoppowa/OpenNutriTracker/issues/1316)).
 - **Device-wide preferences** — theme, accent colour, language, units, kJ /
-  kcal, reminders, the diary day boundary, view toggles, food sources — are
-  shared by every profile on the device, so a restore into one profile should
-  not change them for the others. Reminders also need the system's permission
-  on the new device, and the privacy consents must be given there, not
-  carried over in a file. They survive a profile reset; after a reinstall they
-  are set once by hand.
+  kcal, reminders, view toggles, food sources — are shared by every profile on
+  the device, so they are not in this file. This fork carries them in
+  [`app_settings.json`](#app_settingsjson); the diary day boundary and the
+  privacy consents stay out of both files.
 - **Workout import** settings from Health Connect / Apple Health are left out:
   switching it on needs the system's permission on the new device, and the
   multiplier is suggested again when it is.

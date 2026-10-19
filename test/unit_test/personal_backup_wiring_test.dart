@@ -93,6 +93,7 @@ void main() {
   late Box<MealDBO> customMealBox;
   late ExportDataUsecase exporter;
   late ImportDataUsecase importer;
+  late FakeHiveDBProvider provider;
   final openedBoxes = <Box<dynamic>>[];
 
   setUpAll(() {
@@ -116,7 +117,7 @@ void main() {
     intakeBox = await open<IntakeDBO>('intake');
     waterBox = await open<WaterIntakeDBO>('water');
     customMealBox = await open<MealDBO>('custom_meal');
-    final provider = FakeHiveDBProvider(
+    provider = FakeHiveDBProvider(
       intakeBox: intakeBox,
       waterIntakeBox: waterBox,
       recipeBox: await open<RecipeDBO>('recipe'),
@@ -190,14 +191,16 @@ void main() {
     '${tempDir.path}/backup.zip',
   ).writeAsBytesSync(ZipEncoder().encode(archive));
 
-  Future<bool> importJson() => importer.importData(
-    ExportImportBloc.userActivityJsonFileName,
-    ExportImportBloc.userIntakeJsonFileName,
-    ExportImportBloc.trackedDayJsonFileName,
-    ExportImportBloc.recipeJsonFileName,
-    ExportImportBloc.weightLogJsonFileName,
-    ExportImportBloc.customActivityTemplateJsonFileName,
-  );
+  Future<bool> importJson({bool restoreProfileAndSettings = true}) =>
+      importer.importData(
+        ExportImportBloc.userActivityJsonFileName,
+        ExportImportBloc.userIntakeJsonFileName,
+        ExportImportBloc.trackedDayJsonFileName,
+        ExportImportBloc.recipeJsonFileName,
+        ExportImportBloc.weightLogJsonFileName,
+        ExportImportBloc.customActivityTemplateJsonFileName,
+        restoreProfileAndSettings: restoreProfileAndSettings,
+      );
 
   test('the JSON export carries the water log', () async {
     await waterBox.put(
@@ -252,6 +255,34 @@ void main() {
     expect(restored.code, '20697112');
     expect(restored.localImagePath, slug);
     expect(await photo.readAsBytes(), [7, 7, 7]);
+  });
+
+  test('switching profile and settings off keeps the goals too', () async {
+    final config = ConfigDataSource(provider);
+    await config.initializeConfig();
+    await config.setConfigGoalSettings(
+      kcalAdjustment: -300,
+      carbGoalPct: 40,
+      proteinGoalPct: 30,
+      fatGoalPct: 30,
+      mealKcalSharesPct: null,
+      dailyWaterGoalMl: 2500,
+    );
+    saveZip(await exportJson());
+    await config.setConfigGoalSettings(
+      kcalAdjustment: 100,
+      carbGoalPct: 50,
+      proteinGoalPct: 25,
+      fatGoalPct: 25,
+      mealKcalSharesPct: null,
+      dailyWaterGoalMl: 3000,
+    );
+
+    expect(await importJson(restoreProfileAndSettings: false), isTrue);
+
+    final after = await config.getConfig();
+    expect(after.userKcalAdjustment, 100);
+    expect(after.dailyWaterGoalMl, 3000);
   });
 
   List<int> oneIntake() => utf8.encode(

@@ -295,6 +295,26 @@ void main() {
     });
   });
 
+  test('a number too large for a double is rejected', () async {
+    final archive = Archive()
+      ..addFile(
+        ArchiveFile.bytes(
+          PersonalBackupExtras.userProfileFileName,
+          utf8.encode(
+            '{"birthday": "1994-03-02T00:00:00.000", "heightCM": 183, '
+            '"weightKG": 1e400, "gender": "male", "goal": "loseWeight", '
+            '"pal": "active"}',
+          ),
+        ),
+      );
+
+    expect(
+      () => extras.prepareRestore(archive),
+      throwsA(isA<ExportImportFailure>()),
+    );
+    expect(userBox.isEmpty, isTrue);
+  });
+
   group('app settings', () {
     Future<void> setUpDevice() async {
       await configDataSource.setConfigAppTheme(AppThemeDBO.dark);

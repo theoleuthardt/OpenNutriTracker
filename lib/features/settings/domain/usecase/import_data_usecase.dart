@@ -160,7 +160,7 @@ class ImportDataUsecase {
         templateDBOs,
       );
     }
-    if (goalSettings != null) {
+    if (goalSettings != null && restoreProfileAndSettings) {
       // The backup's goals replace the device's, as a restore should; a
       // null in the file puts that goal back to the app default.
       await _configRepository.setConfigGoalSettings(

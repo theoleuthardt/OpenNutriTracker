@@ -23,8 +23,8 @@ class ImportDataEvent extends ExportImportEvent {
   /// include recipes — see [ExportDataUsecase] for the asymmetry).
   final ExportFormat format;
 
-  /// Whether a JSON import also restores the profile and the app settings
-  /// the backup carries (see `PersonalBackupExtras`).
+  /// Whether a JSON import also restores the profile, the goal settings and
+  /// the app settings the backup carries (see `PersonalBackupExtras`).
   final bool restoreProfileAndSettings;
 
   const ImportDataEvent({
