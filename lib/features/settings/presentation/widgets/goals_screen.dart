@@ -235,7 +235,9 @@ class _GoalsScreenState extends State<GoalsScreen> {
         rest,
         _plan
             .withTrainingTargets(training)
-            .withTrainingWeekdays(_trainingWeekdays),
+            .withTrainingWeekdays(
+              _trainingEnabled ? _trainingWeekdays : _plan.trainingWeekdays,
+            ),
       );
     } catch (error, stackTrace) {
       Logger(
