@@ -94,6 +94,9 @@ class _WaterQuickAmountDialogState extends State<WaterQuickAmountDialog> {
                 errorText: _error,
                 isDense: true,
               ),
+              onChanged: (_) {
+                if (_error != null) setState(() => _error = null);
+              },
               onSubmitted: (_) => _save(),
             ),
           ),
