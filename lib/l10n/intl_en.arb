@@ -1542,5 +1542,6 @@
   "ownGoalsNoteTrainingTitle": "Your training day goals apply",
   "ownGoalsNoteBody": "The calculation below is shown for comparison. Change your goals under Settings → Goals.",
   "ownGoalsNoteFixedKcal": "Fixed goal",
-  "ownGoalsNoteTotal": "Goal today"
+  "ownGoalsNoteTotal": "Goal today",
+  "ownGoalsNoteGramsOnlyBody": "Your calorie goal is calculated as shown below; only the macros are set in grams. Change your goals under Settings → Goals."
 }

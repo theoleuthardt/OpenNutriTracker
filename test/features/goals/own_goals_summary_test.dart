@@ -174,6 +174,37 @@ void main() {
     expect(find.textContaining('2350'), findsOneWidget);
     expect(find.textContaining('350'), findsWidgets);
     expect(find.text('160 g'), findsOneWidget);
+    expect(find.text(l10nEn.ownGoalsNoteBody), findsOneWidget);
+  });
+
+  testWidgets('with gram macros only the calculation still sets the kcal', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: const [
+          S.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('en')],
+        home: Scaffold(
+          body: OwnGoalsNote(
+            load: () async => const OwnGoalsSummary(
+              isTrainingDay: false,
+              fixedKcal: null,
+              kcalGoal: 2500,
+              gramGoals: (carbsG: 220, fatG: 70, proteinG: 160),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(l10nEn.ownGoalsNoteGramsOnlyBody), findsOneWidget);
+    expect(find.text(l10nEn.ownGoalsNoteFixedKcal), findsNothing);
   });
 
   testWidgets('no card without own goals', (tester) async {

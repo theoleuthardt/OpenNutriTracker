@@ -103,7 +103,12 @@ class _OwnGoalsNoteState extends State<OwnGoalsNote> {
                   row(l10n.proteinLabel, '${grams.proteinG.round()} g'),
                 ],
                 const SizedBox(height: Dimens.spacing8),
-                Text(l10n.ownGoalsNoteBody, style: theme.textTheme.bodySmall),
+                Text(
+                  fixed != null
+                      ? l10n.ownGoalsNoteBody
+                      : l10n.ownGoalsNoteGramsOnlyBody,
+                  style: theme.textTheme.bodySmall,
+                ),
               ],
             ),
           ),

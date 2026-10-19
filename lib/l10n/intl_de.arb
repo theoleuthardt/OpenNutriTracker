@@ -1491,5 +1491,6 @@
   "ownGoalsNoteTrainingTitle": "Es gelten deine Trainingstag-Ziele",
   "ownGoalsNoteBody": "Die Berechnung unten dient zum Vergleich. Ziele änderst du unter Einstellungen → Ziele.",
   "ownGoalsNoteFixedKcal": "Festes Ziel",
-  "ownGoalsNoteTotal": "Ziel heute"
+  "ownGoalsNoteTotal": "Ziel heute",
+  "ownGoalsNoteGramsOnlyBody": "Dein Kalorienziel wird wie unten berechnet, nur die Makros sind in Gramm festgelegt. Ziele änderst du unter Einstellungen → Ziele."
 }
