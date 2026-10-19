@@ -90,4 +90,15 @@ void main() {
 
     expect(find.byIcon(Icons.star_rounded), findsOneWidget);
   });
+
+  testWidgets('a failed save says so and keeps the star', (tester) async {
+    final favorites = FakeFavoritesUsecase()..toggleError = StateError('disk');
+    await pump(tester, FavoriteStarButton.meal(_meal, usecase: favorites));
+
+    await tester.tap(find.bySemanticsIdentifier('meal-detail-favorite'));
+    await tester.pumpAndSettle();
+
+    expect(find.text(l10nEn.favoriteToggleFailed), findsOneWidget);
+    expect(find.byIcon(Icons.star_outline_rounded), findsOneWidget);
+  });
 }

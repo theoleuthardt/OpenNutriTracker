@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:opennutritracker/core/domain/entity/recipe_entity.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
@@ -74,6 +75,11 @@ class _FavoriteStarButtonState extends State<FavoriteStarButton> {
             ),
           ),
         );
+    } catch (error, stackTrace) {
+      Logger(
+        'FavoriteStarButton',
+      ).warning('Could not change the favourite', error, stackTrace);
+      messenger.showSnackBar(SnackBar(content: Text(s.favoriteToggleFailed)));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

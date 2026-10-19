@@ -1547,5 +1547,6 @@
   "favoriteAddTooltip": "Add to favourites",
   "favoriteRemoveTooltip": "Remove from favourites",
   "favoriteAddedLabel": "Added to favourites",
-  "favoriteRemovedLabel": "Removed from favourites"
+  "favoriteRemovedLabel": "Removed from favourites",
+  "favoriteToggleFailed": "The favourite could not be saved."
 }

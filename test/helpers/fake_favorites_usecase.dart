@@ -9,6 +9,7 @@ import 'package:opennutritracker/features/favorites/domain/favorites_usecase.dar
 /// favourite star.
 class FakeFavoritesUsecase extends Fake implements FavoritesUsecase {
   final ids = <String>{};
+  Object? toggleError;
 
   @override
   final ValueNotifier<int> changes = ValueNotifier(0);
@@ -30,6 +31,7 @@ class FakeFavoritesUsecase extends Fake implements FavoritesUsecase {
       _toggle(FavoriteEntry.idForRecipe(recipe.id));
 
   bool _toggle(String id) {
+    if (toggleError != null) throw toggleError!;
     final added = ids.add(id);
     if (!added) ids.remove(id);
     changes.value++;
