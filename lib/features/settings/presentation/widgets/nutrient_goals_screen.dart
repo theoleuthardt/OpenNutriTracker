@@ -239,7 +239,11 @@ class _NutrientGoalsScreenState extends State<NutrientGoalsScreen> {
     );
     for (final MapEntry(:key, value: controller) in _extraControllers.entries) {
       final value = _extra[key] ?? _extraDefault(key);
-      controller.text = value == null ? '' : _formatGoal(value);
+      controller.text = value == null
+          ? ''
+          : _extraRanges[key]!.$3
+          ? value.toStringAsFixed(1)
+          : value.round().toString();
     }
   }
 
@@ -268,6 +272,7 @@ class _NutrientGoalsScreenState extends State<NutrientGoalsScreen> {
     // nutrient values onto it. updateTrackedDay creates the row from
     // current macro goals if missing, or refreshes the macro columns
     // on the existing one.
+    await widget.settingsBloc.ensureTrackedDay(DateTime.now());
     await widget.settingsBloc.updateTrackedDay(DateTime.now());
     await widget.settingsBloc.setTodayNutrientGoals(
       DateTime.now(),

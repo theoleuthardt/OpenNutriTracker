@@ -298,6 +298,24 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     Map<String, double> goals,
   ) => _addTrackedDayUsecase.updateDayExtraNutrientGoals(day, goals);
 
+  /// Creates the row of [day] with the day's calorie and macro goals when
+  /// nothing has been logged yet, so goals saved for it are not dropped.
+  Future<void> ensureTrackedDay(DateTime day) async {
+    if (await _addTrackedDayUsecase.hasTrackedDay(day)) return;
+    final kcalGoal = await _getKcalGoalUsecase.getKcalGoalForDay(day);
+    final macros = await _getMacroGoalUsecase.getMacroGoalsForDay(
+      kcalGoal,
+      day,
+    );
+    await _addTrackedDayUsecase.addNewTrackedDay(
+      day,
+      kcalGoal,
+      macros.carbsG,
+      macros.fatG,
+      macros.proteinG,
+    );
+  }
+
   Future<void> updateTrackedDay(DateTime day) async {
     final totalKcalGoal = await _getKcalGoalUsecase.getKcalGoal();
     final totalCarbsGoal = await _getMacroGoalUsecase.getCarbsGoal(

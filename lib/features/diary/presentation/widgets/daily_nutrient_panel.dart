@@ -819,7 +819,11 @@ class _NutrientRow extends StatelessWidget {
     final palette = isDark ? AppPalette.dark : AppPalette.light;
     final textTheme = Theme.of(context).textTheme;
     final reference = this.reference;
-    final ratio = reference != null && reference > 0 ? value / reference : 0.0;
+    final ratio = switch (reference) {
+      final ref? when ref > 0 => value / ref,
+      final ref? when ref == 0 && value > 0 && excessMatters => 1.0,
+      _ => 0.0,
+    };
     final clamped = ratio.clamp(0.0, 1.0).toDouble();
     final color = _colorForRatio(context, ratio);
     final unknown = total?.isUnknown ?? false;

@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
+import 'package:opennutritracker/core/domain/entity/tracked_day_entity.dart';
 import 'package:opennutritracker/core/utils/energy_unit_provider.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_nutriments_entity.dart';
@@ -37,12 +38,17 @@ final _intake = IntakeEntity(
       saturatedFat100: null,
       fiber100: null,
       monounsaturatedFat100: 5,
+      cholesterol100: 40,
       zinc100: 2,
     ),
   ),
 );
 
-Future<void> _openPanel(WidgetTester tester, {bool kilojoules = false}) async {
+Future<void> _openPanel(
+  WidgetTester tester, {
+  bool kilojoules = false,
+  TrackedDayEntity? trackedDay,
+}) async {
   await tester.binding.setSurfaceSize(const Size(500, 4000));
   addTearDown(() => tester.binding.setSurfaceSize(null));
   await tester.pumpWidget(
@@ -58,7 +64,10 @@ Future<void> _openPanel(WidgetTester tester, {bool kilojoules = false}) async {
         supportedLocales: const [Locale('en')],
         home: Scaffold(
           body: SingleChildScrollView(
-            child: DailyNutrientPanel(intakes: [_intake]),
+            child: DailyNutrientPanel(
+              intakes: [_intake],
+              trackedDay: trackedDay,
+            ),
           ),
         ),
       ),
@@ -132,5 +141,30 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(l10nEn.monounsaturatedFatLabel), findsOneWidget);
+  });
+
+  testWidgets('any intake goes over a limit of zero', (tester) async {
+    await _openPanel(
+      tester,
+      trackedDay: TrackedDayEntity(
+        day: DateTime(2026, 10, 19),
+        calorieGoal: 2000,
+        caloriesTracked: 150,
+        extraNutrientGoals: const {NutrientPanelKeys.cholesterol: 0},
+      ),
+    );
+
+    final row = find.ancestor(
+      of: find.text(l10nEn.cholesterolLabel),
+      matching: find.byType(Column),
+    );
+    final bar = tester.widget<LinearProgressIndicator>(
+      find.descendant(
+        of: row.first,
+        matching: find.byType(LinearProgressIndicator),
+      ),
+    );
+    expect(find.text('40 / 0.0mg'), findsOneWidget);
+    expect(bar.value, 1.0);
   });
 }
