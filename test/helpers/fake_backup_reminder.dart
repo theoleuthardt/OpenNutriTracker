@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:opennutritracker/features/settings/domain/backup_reminder.dart';
 
@@ -13,6 +14,10 @@ class FakeBackupReminder extends Fake implements BackupReminder {
   int reminderDays;
   bool due;
   final setDays = <int>[];
+  final notifier = ValueNotifier<int>(0);
+
+  @override
+  Listenable get changes => notifier;
 
   @override
   Future<({DateTime? lastBackupAt, int reminderDays, bool isDue})>

@@ -93,6 +93,16 @@ void main() {
       expect(state.isDue, isFalse);
     });
 
+    test('tells listeners about a stored change', () async {
+      var calls = 0;
+      reminder.changes.addListener(() => calls++);
+
+      await reminder.markBackedUp();
+      await reminder.setReminderDays(3);
+
+      expect(calls, 2);
+    });
+
     test('remembers the period and keeps the rest of the config', () async {
       await config.setConfigUsesKilojoules(true);
 

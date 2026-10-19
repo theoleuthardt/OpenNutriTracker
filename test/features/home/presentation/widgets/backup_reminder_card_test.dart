@@ -61,6 +61,20 @@ void main() {
     expect(card(), findsNothing);
   });
 
+  testWidgets('disappears once a backup is saved elsewhere', (tester) async {
+    final reminder = FakeBackupReminder();
+    await pumpCard(tester, reminder);
+    expect(card(), findsOneWidget);
+
+    reminder
+      ..due = false
+      ..lastBackupAt = now;
+    reminder.notifier.value++;
+    await tester.pumpAndSettle();
+
+    expect(card(), findsNothing);
+  });
+
   testWidgets('can be dismissed for the session', (tester) async {
     await pumpCard(tester, FakeBackupReminder());
 

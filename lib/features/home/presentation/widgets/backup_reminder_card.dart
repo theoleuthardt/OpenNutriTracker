@@ -36,7 +36,14 @@ class _BackupReminderCardState extends State<BackupReminderCard> {
   @override
   void initState() {
     super.initState();
+    _reminder.changes.addListener(_load);
     _load();
+  }
+
+  @override
+  void dispose() {
+    _reminder.changes.removeListener(_load);
+    super.dispose();
   }
 
   Future<void> _load() async {

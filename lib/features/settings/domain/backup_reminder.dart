@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:opennutritracker/core/data/data_source/config_data_source.dart';
 import 'package:opennutritracker/core/data/dbo/config_dbo.dart';
 
@@ -12,6 +13,11 @@ class BackupReminder {
 
   final ConfigDataSource _config;
   final DateTime Function() _clock;
+  final _changes = ValueNotifier<int>(0);
+
+  /// Fires after [markBackedUp] or [setReminderDays] stored a change, so a
+  /// mounted reminder can reload.
+  Listenable get changes => _changes;
 
   BackupReminder(this._config, {DateTime Function()? clock})
     : _clock = clock ?? DateTime.now;
@@ -54,5 +60,6 @@ class BackupReminder {
     final config = await _config.getConfig();
     change(config);
     await _config.addConfig(config);
+    _changes.value++;
   }
 }
