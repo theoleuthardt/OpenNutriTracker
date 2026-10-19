@@ -13,8 +13,12 @@ logs:
   imported data.
 - **A single reading** gives no smoothed point by default and its own value at
   `minSamples: 1`.
-- **Calendar boundaries** (month, year, daylight saving) are handled by
-  building the window start from year/month/day, not from a fixed duration.
+- **Calendar boundaries**: a window reaching back across a year end is
+  tested; the window start is built from year/month/day rather than a fixed
+  duration so a daylight-saving change does not shift it by an hour (not
+  testable in CI, which runs in UTC).
+- **The window edge**: a reading six days back is in, one seven days back is
+  out (the boundary test).
 
 ## Why not an exponential moving average
 

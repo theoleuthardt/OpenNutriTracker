@@ -203,9 +203,10 @@ void main() {
           _entry(DateTime(2026, 1, 2), 70),
         ]);
 
-        expect(points.last.date, DateTime(2026, 1, 2));
-        expect(points.last.sampleCount, 3);
-        expect(points.last.weightKg, 80);
+        expect(points.map((p) => (p.date, p.weightKg, p.sampleCount)), [
+          (DateTime(2025, 12, 30), 85.0, 2),
+          (DateTime(2026, 1, 2), 80.0, 3),
+        ]);
       });
     });
   });
