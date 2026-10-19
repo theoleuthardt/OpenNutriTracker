@@ -88,6 +88,20 @@ void main() {
       expect(result.uncertain, isNot(contains('fat')));
     });
 
+    test('a kcal row under kJ keeps to the per-100 column', () {
+      final result = parseNutritionLabel([
+        _row('pro 100 g', 0.10, x: 0.55),
+        _row('pro Portion (30 g)', 0.10, x: 0.80),
+        _row('Brennwert', 0.16),
+        _row('1029 kJ', 0.16, x: 0.55),
+        _row('309 kJ', 0.16, x: 0.80),
+        _row('248 kcal', 0.22, x: 0.55),
+        _row('74 kcal', 0.22, x: 0.80),
+      ]);
+
+      expect(result.energyKcal, 248);
+    });
+
     test('"<" values and "Spuren" read as 0 below the threshold', () {
       final result = parseNutritionLabel([
         _row('Fett < 0,5 g', 0.10),

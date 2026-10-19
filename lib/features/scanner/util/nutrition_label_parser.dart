@@ -179,21 +179,28 @@ void _checkConsistency(Map<String, double> values, Set<String> uncertain) {
   }
 }
 
-/// The value texts of a table row: the rest of a single-line row ("Fett
-/// 0,5 g"), or its other cells, the one under the per-100 header first.
+/// The value texts of a table row, the one closest to the per-100 header
+/// first: the rest of the first line when it carries a value ("Fett 0,5 g",
+/// or a kcal line continuing the energy row) and the row's other cells.
 List<({String text, double confidence})> _valueCells(
   List<OcrLine> row,
   double? headerX,
 ) {
   final label = row.first;
-  final rest = row.skip(1).toList();
-  if (headerX != null) {
-    rest.sort((a, b) => (a.x - headerX).abs().compareTo((b.x - headerX).abs()));
-  }
   final inline = _afterLabel(label.text);
+  final cells = [
+    if (inline != null)
+      (text: inline, confidence: label.confidence, x: label.x),
+    for (final cell in row.skip(1))
+      (text: cell.text, confidence: cell.confidence, x: cell.x),
+  ];
+  if (headerX != null) {
+    cells.sort(
+      (a, b) => (a.x - headerX).abs().compareTo((b.x - headerX).abs()),
+    );
+  }
   return [
-    for (final cell in rest) (text: cell.text, confidence: cell.confidence),
-    if (inline != null) (text: inline, confidence: label.confidence),
+    for (final cell in cells) (text: cell.text, confidence: cell.confidence),
   ];
 }
 
