@@ -290,6 +290,14 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     );
   }
 
+  /// Stores today's own goals for the nutrients added to the panel in #47;
+  /// an empty map clears them. Like [setTodayNutrientGoals], the row has to
+  /// exist already.
+  Future<void> setTodayExtraNutrientGoals(
+    DateTime day,
+    Map<String, double> goals,
+  ) => _addTrackedDayUsecase.updateDayExtraNutrientGoals(day, goals);
+
   Future<void> updateTrackedDay(DateTime day) async {
     final totalKcalGoal = await _getKcalGoalUsecase.getKcalGoal();
     final totalCarbsGoal = await _getMacroGoalUsecase.getCarbsGoal(
