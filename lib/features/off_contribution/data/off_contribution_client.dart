@@ -32,8 +32,8 @@ class OffContributionClient {
     : _userAgent = userAgent,
       _client = client ?? http.Client();
 
-  /// Whether Open Food Facts already has energy or macro values for
-  /// [barcode]; an unknown product has none.
+  /// Whether Open Food Facts already has any of the values an upload would
+  /// write for [barcode]; an unknown product has none.
   Future<bool> hasNutritionValues(
     OffContributionSettings settings,
     String barcode,
@@ -59,8 +59,13 @@ class OffContributionClient {
       'energy-kcal_100g',
       'energy_100g',
       'fat_100g',
+      'saturated-fat_100g',
       'carbohydrates_100g',
+      'sugars_100g',
+      'fiber_100g',
       'proteins_100g',
+      'salt_100g',
+      'sodium_100g',
     ].any((key) => nutriments[key] != null);
   }
 

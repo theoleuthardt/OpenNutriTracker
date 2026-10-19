@@ -9,6 +9,9 @@ class OffNutritionUpload {
 
   const OffNutritionUpload._(this.barcode, this.fields);
 
+  /// Whether there is any value to send.
+  bool get hasValues => fields.keys.any((key) => key.startsWith('nutriment_'));
+
   factory OffNutritionUpload.fromNutriments(
     String barcode,
     MealNutrimentsEntity nutriments,

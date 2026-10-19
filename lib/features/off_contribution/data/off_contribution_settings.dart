@@ -66,9 +66,10 @@ class OffContributionSettingsStore {
     final raw = await _storage.read(key: _key);
     if (raw == null) return const OffContributionSettings();
     try {
-      return OffContributionSettings.fromJson(
-        jsonDecode(raw) as Map<String, dynamic>,
-      );
+      final json = jsonDecode(raw);
+      return json is Map<String, dynamic>
+          ? OffContributionSettings.fromJson(json)
+          : const OffContributionSettings();
     } on FormatException {
       return const OffContributionSettings();
     }

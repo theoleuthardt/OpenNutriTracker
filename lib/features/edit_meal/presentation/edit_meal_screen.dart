@@ -1108,8 +1108,12 @@ class _EditMealScreenState extends State<EditMealScreen> {
       if (_labelScanned &&
           rawBarcode.isNotEmpty &&
           !isStoreInternalBarcode(rawBarcode)) {
-        await locator<OffContributionFlow>()
-            .offer(context, rawBarcode, newMealEntity.nutriments);
+        try {
+          await locator<OffContributionFlow>()
+              .offer(context, rawBarcode, newMealEntity.nutriments);
+        } catch (error, stackTrace) {
+          log.warning('Open Food Facts upload offer failed', error, stackTrace);
+        }
         if (!mounted) return;
       }
       if (_editOnly) {

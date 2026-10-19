@@ -29,6 +29,7 @@ class OffContributionFlow {
     final settings = await _store.load();
     if (!settings.isReady || !context.mounted) return;
     final upload = OffNutritionUpload.fromNutriments(barcode, nutriments);
+    if (!upload.hasValues) return;
     final messenger = ScaffoldMessenger.of(context);
     final l10n = S.of(context);
     final send = await showDialog<bool>(
@@ -37,15 +38,18 @@ class OffContributionFlow {
           _UploadPreviewDialog(upload: upload, settings: settings),
     );
     if (send != true) return;
-    unawaited(_send(messenger, l10n, settings, upload));
+    unawaited(_send(messenger, l10n, upload));
   }
 
+  /// Sends [upload] with the settings as they are now, so a retry after
+  /// changing the account or the server uses the new ones.
   Future<void> _send(
     ScaffoldMessengerState messenger,
     S l10n,
-    OffContributionSettings settings,
     OffNutritionUpload upload,
   ) async {
+    final settings = await _store.load();
+    if (!settings.isReady) return;
     String message;
     SnackBarAction? retry;
     try {
@@ -63,7 +67,7 @@ class OffContributionFlow {
       };
       retry = SnackBarAction(
         label: l10n.offUploadRetry,
-        onPressed: () => unawaited(_send(messenger, l10n, settings, upload)),
+        onPressed: () => unawaited(_send(messenger, l10n, upload)),
       );
     }
     messenger.showSnackBar(SnackBar(content: Text(message), action: retry));

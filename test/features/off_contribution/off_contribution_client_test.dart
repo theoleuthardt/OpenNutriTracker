@@ -52,6 +52,15 @@ void main() {
       });
     });
 
+    test('a food without any value has nothing to send', () {
+      final upload = OffNutritionUpload.fromNutriments(
+        '20697112',
+        MealNutrimentsEntity.empty(),
+      );
+
+      expect(upload.hasValues, isFalse);
+    });
+
     test('leaves out values the food does not have', () {
       final upload = OffNutritionUpload.fromNutriments(
         '20697112',
@@ -236,6 +245,22 @@ void main() {
         'https://world.openfoodfacts.net/api/v2/product/20697112'
         '?fields=nutriments',
       );
+    });
+
+    test('a product with only sugars already has values too', () async {
+      final client = clientAnswering(
+        (_) => http.Response(
+          jsonEncode({
+            'status': 1,
+            'product': {
+              'nutriments': {'sugars_100g': 12},
+            },
+          }),
+          200,
+        ),
+      );
+
+      expect(await client.hasNutritionValues(_settings, '20697112'), isTrue);
     });
 
     test('a product without nutriments, or an unknown one, has none', () async {

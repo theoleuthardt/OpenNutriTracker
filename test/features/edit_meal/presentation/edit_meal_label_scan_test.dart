@@ -355,6 +355,40 @@ void main() {
     expect(offers, isEmpty);
   });
 
+  testWidgets('a food typed in by hand is never offered for upload', (
+    tester,
+  ) async {
+    final offers = <(String, double?)>[];
+    getIt.registerLazySingleton<OffContributionFlow>(
+      () => _RecordingFlow(offers),
+    );
+    await pumpEditMeal(
+      tester,
+      EditMealScreenArguments(
+        DateTime(2026, 10, 19),
+        MealEntity.empty(),
+        IntakeTypeEntity.snack,
+        false,
+        barcode: '4056489123453',
+      ),
+    );
+    await tester.enterText(
+      find.descendant(
+        of: find.ancestor(
+          of: find.text(l10nEn.mealNameLabel),
+          matching: find.byType(TextFormField),
+        ),
+        matching: find.byType(TextField),
+      ),
+      'Studenten-Futter',
+    );
+    await tester.tap(find.text(l10nEn.buttonSaveLabel));
+    await tester.pumpAndSettle();
+
+    expect(find.text('meal-detail'), findsOneWidget);
+    expect(offers, isEmpty);
+  });
+
   group('barcode check digit on save', () {
     Future<void> saveWithBarcode(WidgetTester tester, String code) async {
       final meal = MealEntity.empty();
