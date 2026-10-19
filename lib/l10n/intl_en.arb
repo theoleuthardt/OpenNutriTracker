@@ -1551,5 +1551,11 @@
   "favoriteToggleFailed": "The favourite could not be saved.",
   "favoritesLabel": "Favourites",
   "favoritesEmptyTitle": "No favourites yet",
-  "favoritesEmptySubtitle": "Tap the star on a food or recipe to find it here."
+  "favoritesEmptySubtitle": "Tap the star on a food or recipe to find it here.",
+  "copyDialogDayLabel": "Copy to",
+  "copyDayAction": "Copy day",
+  "copyDayDialogTitle": "Copy this day",
+  "copyDayActivitiesLabel": "With activities",
+  "copyDayWaterLabel": "With water",
+  "copiedLabel": "Copied"
 }

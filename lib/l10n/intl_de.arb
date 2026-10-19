@@ -1500,5 +1500,11 @@
   "favoriteToggleFailed": "Der Favorit konnte nicht gespeichert werden.",
   "favoritesLabel": "Favoriten",
   "favoritesEmptyTitle": "Noch keine Favoriten",
-  "favoritesEmptySubtitle": "Tippe bei einem Lebensmittel oder Rezept auf den Stern, um es hier zu finden."
+  "favoritesEmptySubtitle": "Tippe bei einem Lebensmittel oder Rezept auf den Stern, um es hier zu finden.",
+  "copyDialogDayLabel": "Kopieren auf",
+  "copyDayAction": "Tag kopieren",
+  "copyDayDialogTitle": "Diesen Tag kopieren",
+  "copyDayActivitiesLabel": "Mit Aktivitäten",
+  "copyDayWaterLabel": "Mit Wasser",
+  "copiedLabel": "Kopiert"
 }
