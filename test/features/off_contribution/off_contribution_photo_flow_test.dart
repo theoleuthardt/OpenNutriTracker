@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -186,7 +187,31 @@ void main() {
     expect(deletions, 1);
   });
 
-  testWidgets('values already there: nothing is sent, the photo is deleted', (
+  testWidgets('values already there: only the ticked photo goes out', (
+    tester,
+  ) async {
+    answers = [
+      (_) => http.Response(
+        jsonEncode({
+          'status': 1,
+          'product': {
+            'nutriments': {'energy-kcal_100g': 540},
+          },
+        }),
+        200,
+      ),
+      photoKept,
+    ];
+    await pumpAndOffer(tester, flow(ready), labelPhoto: photo());
+
+    await send(tester, withPhoto: true);
+
+    expect(requests.map(isPhotoUpload), [false, true]);
+    expect(find.text(l10nEn.offUploadOnlyPhoto), findsOneWidget);
+    expect(deletions, 1);
+  });
+
+  testWidgets('values already there and no photo: nothing is sent', (
     tester,
   ) async {
     answers = [
@@ -202,9 +227,29 @@ void main() {
     ];
     await pumpAndOffer(tester, flow(ready), labelPhoto: photo());
 
-    await send(tester, withPhoto: true);
+    await send(tester);
 
     expect(requests, hasLength(1));
+    expect(find.text(l10nEn.offUploadAlreadyThere), findsOneWidget);
+    expect(deletions, 1);
+  });
+
+  testWidgets('a photo that can no longer be read is skipped', (tester) async {
+    answers = [unknownProduct, saved];
+    await pumpAndOffer(
+      tester,
+      flow(ready),
+      labelPhoto: LabelPhoto(
+        fileName: 'label.jpg',
+        read: () async => throw const FileSystemException('gone'),
+        delete: () async => deletions++,
+      ),
+    );
+
+    await send(tester, withPhoto: true);
+
+    expect(requests.where(isPhotoUpload), isEmpty);
+    expect(find.text(l10nEn.offUploadDone), findsOneWidget);
     expect(deletions, 1);
   });
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:opennutritracker/core/styles/dimens.dart';
@@ -16,7 +17,8 @@ import 'package:opennutritracker/generated/l10n.dart';
 /// upload never costs the local entry; it can be retried from the message.
 ///
 /// With the photo of the table (#112) the dialog offers to send it as well,
-/// unticked by default. The flow owns the photo and deletes it on every
+/// unticked by default; a ticked photo also goes out when Open Food Facts
+/// already has values, since it overwrites nothing. The flow owns the photo and deletes it on every
 /// path: switched off, not sent, sent without it, after its upload, and
 /// after a failure once the message closes without a retry.
 class OffContributionFlow {
@@ -77,23 +79,18 @@ class OffContributionFlow {
     String message;
     SnackBarAction? retry;
     try {
-      if (!sent && await _client.hasNutritionValues(settings, upload.barcode)) {
-        message = l10n.offUploadAlreadyThere;
-      } else {
-        if (!sent) {
-          await _client.upload(settings, upload);
-          sent = true;
-        }
-        if (photo != null) {
-          await _client.uploadNutritionPhoto(
-            settings,
-            upload.barcode,
-            await photo.read(),
-            photo.fileName,
-          );
-        }
-        message = l10n.offUploadDone;
+      final valuesThere =
+          !sent && await _client.hasNutritionValues(settings, upload.barcode);
+      if (!sent && !valuesThere) {
+        await _client.upload(settings, upload);
+        sent = true;
       }
+      final photoSent = photo != null && await _sendPhoto(settings, upload, photo);
+      message = switch ((valuesThere, photoSent)) {
+        (true, true) => l10n.offUploadOnlyPhoto,
+        (true, false) => l10n.offUploadAlreadyThere,
+        (false, _) => l10n.offUploadDone,
+      };
     } on OffContributionException catch (error) {
       message = switch (error.failure) {
         OffContributionFailure.offline => l10n.offUploadOffline,
@@ -120,6 +117,28 @@ class OffContributionFlow {
         }),
       );
     }
+  }
+
+  /// Uploads [photo]; false when it can no longer be read (the system may
+  /// have emptied its temporary folder), in which case it is skipped.
+  Future<bool> _sendPhoto(
+    OffContributionSettings settings,
+    OffNutritionUpload upload,
+    LabelPhoto photo,
+  ) async {
+    final List<int> bytes;
+    try {
+      bytes = await photo.read();
+    } on FileSystemException {
+      return false;
+    }
+    await _client.uploadNutritionPhoto(
+      settings,
+      upload.barcode,
+      bytes,
+      photo.fileName,
+    );
+    return true;
   }
 }
 

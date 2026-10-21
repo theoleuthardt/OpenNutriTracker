@@ -1441,6 +1441,7 @@
   "offUploadSkip": "Nicht senden",
   "offUploadDone": "An Open Food Facts gesendet",
   "offUploadAlreadyThere": "Open Food Facts hat für dieses Produkt schon Nährwerte, deshalb wurde nichts gesendet.",
+  "offUploadOnlyPhoto": "Open Food Facts hatte für dieses Produkt schon Nährwerte, deshalb wurde nur das Foto gesendet.",
   "offUploadOffline": "Open Food Facts ist nicht erreichbar.",
   "offUploadRejected": "Open Food Facts hat den Upload abgelehnt. Bitte Benutzername und Passwort prüfen.",
   "offUploadBusy": "Open Food Facts ist gerade überlastet.",
