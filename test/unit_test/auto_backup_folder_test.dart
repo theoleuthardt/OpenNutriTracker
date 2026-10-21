@@ -102,6 +102,17 @@ void main() {
     expect((await store.load()).target, AutoBackupTarget.server);
   });
 
+  test('the folder target without a folder reports a folder error', () async {
+    await store.save(const AutoBackupSettings(target: AutoBackupTarget.folder));
+
+    await expectLater(
+      service.listBackups(),
+      throwsA(
+        isA<BackupFolderException>().having((e) => e.code, 'code', 'not_found'),
+      ),
+    );
+  });
+
   group('with a folder', () {
     setUp(() async {
       await service.chooseFolder();

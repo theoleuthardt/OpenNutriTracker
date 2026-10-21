@@ -373,5 +373,27 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets('back up now ignores the hidden server address', (
+      tester,
+    ) async {
+      await store.save(
+        const AutoBackupSettings(
+          target: AutoBackupTarget.folder,
+          folderBookmark: 'bm',
+          folderName: 'Backups',
+        ),
+      );
+      await pumpScreen(tester);
+      await tester.tap(find.text('Server (WebDAV)'));
+      await tester.pumpAndSettle();
+      await fillIn(tester, folder: 'http://not-https.example.org/');
+      await tester.tap(find.text('Folder'));
+      await tester.pumpAndSettle();
+
+      await tapButton(tester, 'auto-backup-now');
+
+      expect(service.ranNow, 1);
+    });
   });
 }

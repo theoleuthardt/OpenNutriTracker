@@ -110,6 +110,13 @@ class _AutoBackupScreenState extends State<AutoBackupScreen> {
   /// The form as settings, or null (with the field error set) when the
   /// address is not https.
   AutoBackupSettings? _fromForm() {
+    if (_settings!.target == AutoBackupTarget.folder) {
+      final password = _password.text;
+      return _settings!.copyWith(
+        password: password.isEmpty ? null : password,
+        clearPassword: password.isEmpty,
+      );
+    }
     final folder = _folder.text.trim();
     final uri = Uri.tryParse(folder);
     final valid = uri != null && uri.scheme == 'https' && uri.host.isNotEmpty;

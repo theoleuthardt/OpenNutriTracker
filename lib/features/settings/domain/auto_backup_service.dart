@@ -68,7 +68,8 @@ class AutoBackupService {
         ),
         AutoBackupTarget.folder => _FolderTarget(
           _folder,
-          settings.folderBookmark!,
+          settings.folderBookmark ??
+              (throw const BackupFolderException('not_found')),
           onRenewed: (bookmark) =>
               _saveStatus((fresh) => fresh.copyWith(folderBookmark: bookmark)),
         ),

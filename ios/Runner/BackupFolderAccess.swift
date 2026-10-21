@@ -60,19 +60,19 @@ final class BackupFolderAccess: NSObject, UIDocumentPickerDelegate {
               let name = arguments["name"] as? String,
               let bytes = arguments["bytes"] as? FlutterStandardTypedData
             else { throw FolderError.badArguments }
-            try Self.write(bytes.data, to: folder.appendingPathComponent(name))
+            try Self.write(bytes.data, to: folder.appendingPathComponent(try Self.safeName(name)))
             return [:]
           case "read":
             guard let name = arguments["name"] as? String else {
               throw FolderError.badArguments
             }
-            let data = try Self.read(folder.appendingPathComponent(name))
+            let data = try Self.read(folder.appendingPathComponent(try Self.safeName(name)))
             return ["bytes": FlutterStandardTypedData(bytes: data)]
           default:
             guard let name = arguments["name"] as? String else {
               throw FolderError.badArguments
             }
-            try Self.delete(folder.appendingPathComponent(name))
+            try Self.delete(folder.appendingPathComponent(try Self.safeName(name)))
             return [:]
           }
         }
@@ -152,6 +152,15 @@ final class BackupFolderAccess: NSObject, UIDocumentPickerDelegate {
   }
 
   // MARK: Folder access
+
+  /// [name] as a file name inside the folder; one that would reach outside
+  /// it is refused.
+  private static func safeName(_ name: String) throws -> String {
+    guard !name.isEmpty, !name.contains("/"), name != ".", name != ".." else {
+      throw FolderError.badArguments
+    }
+    return name
+  }
 
   /// Resolves the bookmark, opens the security scope for [body] and adds a
   /// renewed bookmark to its answer when the stored one was stale.
