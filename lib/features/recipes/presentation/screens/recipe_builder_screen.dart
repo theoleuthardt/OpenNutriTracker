@@ -298,6 +298,7 @@ class _RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
               RecipeWeightNote(
                 rawWeightG: state.rawWeightG,
                 cookedWeightG: state.totalWeightG,
+                overridden: state.totalWeightOverridden,
                 onReset: () => _bloc.add(const ResetTotalWeightEvent()),
               ),
               const SizedBox(height: Dimens.spacing16),
