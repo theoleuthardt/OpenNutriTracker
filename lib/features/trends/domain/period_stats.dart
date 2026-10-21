@@ -61,7 +61,10 @@ PeriodStats periodStats({
 
   final totalDays = last.isBefore(first)
       ? 0
-      : last.difference(first).inDays + 1;
+      : DateTime.utc(last.year, last.month, last.day)
+                .difference(DateTime.utc(first.year, first.month, first.day))
+                .inDays +
+            1;
   final tracked = [
     for (final day in days)
       if (inPeriod(day.day) && day.caloriesTracked > 0) day,

@@ -179,4 +179,15 @@ void main() {
     expect(stats.totalDays, 0);
     expect(stats.trackedDays, 0);
   });
+
+  test('a period across the daylight saving change counts every day', () {
+    final stats = periodStats(
+      start: DateTime(2026, 3, 23),
+      end: DateTime(2026, 3, 30),
+      days: const [],
+      waterByDay: const {},
+    );
+
+    expect(stats.totalDays, 8);
+  });
 }
