@@ -202,10 +202,8 @@ class EnergyWeightCard extends StatelessWidget {
                               LineChartBarData(
                                 spots: [
                                   for (final point in segment)
-                                    FlSpot(
-                                      indexOf[point.day]!.toDouble(),
-                                      _weight(point.kg),
-                                    ),
+                                    if (indexOf[point.day] case final i?)
+                                      FlSpot(i.toDouble(), _weight(point.kg)),
                                 ],
                                 color: weightColor,
                                 barWidth: 3,
