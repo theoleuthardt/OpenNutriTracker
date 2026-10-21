@@ -90,12 +90,7 @@ void main() {
       intakes = IntakeDataSource(db);
     });
 
-    tearDown(() async {
-      await recipeBox.clear();
-      await intakeBox.clear();
-      await Hive.close();
-      await Hive.deleteFromDisk();
-    });
+    tearDown(() => Hive.deleteFromDisk());
 
     test(
       'keeps its diary entry when the recipe changes or is deleted',
