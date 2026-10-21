@@ -8,13 +8,18 @@ import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dar
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_nutriments_entity.dart';
 import 'package:opennutritracker/features/recipes/presentation/bloc/recipe_builder_bloc.dart';
 
-class _NoRepository implements RecipeRepository {
+class _MemoryRepository implements RecipeRepository {
+  final saved = <RecipeEntity>[];
+
+  @override
+  Future<void> saveRecipe(RecipeEntity recipe) async => saved.add(recipe);
+
   @override
   dynamic noSuchMethod(Invocation invocation) =>
       throw UnimplementedError('Unexpected call: ${invocation.memberName}');
 }
 
-RecipeEntity _soup() => RecipeEntity(
+RecipeEntity _soup({double totalWeightG = 800}) => RecipeEntity(
   id: 'soup',
   name: 'Soup',
   description: null,
@@ -45,7 +50,7 @@ RecipeEntity _soup() => RecipeEntity(
       convertedAmountG: 1000,
     ),
   ],
-  totalWeightG: 800,
+  totalWeightG: totalWeightG,
   aggregatedNutrimentsPer100: MealNutrimentsEntity.empty(),
   createdAt: DateTime.utc(2026, 1, 1),
   updatedAt: DateTime.utc(2026, 1, 1),
@@ -54,13 +59,12 @@ RecipeEntity _soup() => RecipeEntity(
 
 void main() {
   late RecipeBuilderBloc bloc;
+  late _MemoryRepository repo;
 
   setUp(() {
     final compute = ComputeRecipeNutritionUseCase();
-    bloc = RecipeBuilderBloc(
-      compute,
-      SaveRecipeUseCase(_NoRepository(), compute),
-    );
+    repo = _MemoryRepository();
+    bloc = RecipeBuilderBloc(compute, SaveRecipeUseCase(repo, compute));
   });
 
   tearDown(() => bloc.close());
@@ -84,5 +88,48 @@ void main() {
       bloc.state.aggregatedNutrimentsPer100.energyKcal100,
       closeTo(100, 1e-9),
     );
+  });
+
+  test('a reset never shows the cooked weight as the raw one', () async {
+    bloc.add(InitializeBuilderEvent(existing: _soup()));
+    await Future<void>.delayed(Duration.zero);
+    final seen = <(bool, double)>[];
+    final sub = bloc.stream.listen(
+      (state) => seen.add((state.totalWeightOverridden, state.totalWeightG)),
+    );
+
+    bloc.add(const ResetTotalWeightEvent());
+    await Future<void>.delayed(Duration.zero);
+    await sub.cancel();
+
+    expect(seen, [(false, 1000.0)]);
+  });
+
+  test('a reset and save stores the raw weight and its values', () async {
+    bloc.add(InitializeBuilderEvent(existing: _soup()));
+    bloc.add(const ResetTotalWeightEvent());
+    bloc.add(const SaveRecipeEvent());
+    await bloc.stream.firstWhere((_) => repo.saved.isNotEmpty);
+
+    final saved = repo.saved.single;
+    expect(saved.totalWeightG, 1000);
+    expect(saved.aggregatedNutrimentsPer100.energyKcal100, closeTo(100, 1e-9));
+
+    final reopened = RecipeBuilderBloc(
+      ComputeRecipeNutritionUseCase(),
+      SaveRecipeUseCase(repo, ComputeRecipeNutritionUseCase()),
+    );
+    addTearDown(reopened.close);
+    reopened.add(InitializeBuilderEvent(existing: saved));
+    await Future<void>.delayed(Duration.zero);
+    expect(reopened.state.totalWeightOverridden, isFalse);
+  });
+
+  test('a stored weight of zero is no cooked weight', () async {
+    bloc.add(InitializeBuilderEvent(existing: _soup(totalWeightG: 0)));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(bloc.state.totalWeightOverridden, isFalse);
+    expect(bloc.state.totalWeightG, 1000);
   });
 }
