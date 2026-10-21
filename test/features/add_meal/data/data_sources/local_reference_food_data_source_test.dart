@@ -6,9 +6,10 @@ import 'package:opennutritracker/features/add_meal/domain/entity/meal_portion_en
 
 class _Source extends SpFoodDataSource {
   final List<SpFoodDTO> results;
+  final bool fails;
   final queries = <String>[];
 
-  _Source(this.results);
+  _Source(this.results, {this.fails = false});
 
   @override
   Future<List<SpFoodDTO>> fetchSearchWordResults(
@@ -16,6 +17,7 @@ class _Source extends SpFoodDataSource {
     bool forResolution = false,
   }) async {
     queries.add(searchString);
+    if (fails) throw StateError('catalog failed to load');
     return results;
   }
 
@@ -49,6 +51,15 @@ void main() {
     expect([for (final r in results) r.foodId], [1, 2, 3]);
     expect(bls.queries, ['apple']);
     expect(fdc.queries, ['apple']);
+  });
+
+  test('a failing source does not take the others down', () async {
+    final results = await LocalReferenceFoodDataSource([
+      _Source([dto(1, 'bls')]),
+      _Source(const [], fails: true),
+    ]).fetchSearchWordResults('apple');
+
+    expect([for (final r in results) r.foodId], [1]);
   });
 
   test('portion lookups answer empty', () async {

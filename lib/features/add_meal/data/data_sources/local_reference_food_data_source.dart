@@ -4,7 +4,8 @@ import 'package:opennutritracker/features/add_meal/domain/entity/meal_portion_en
 
 /// The fork's reference food search: the local sources in their order, the
 /// BLS first, then FoodData Central (#80). Each source applies its own
-/// switch; none has portions.
+/// switch; none has portions. A source that fails adds no results instead
+/// of failing the search.
 class LocalReferenceFoodDataSource extends SpFoodDataSource {
   final List<SpFoodDataSource> _sources;
 
@@ -17,10 +18,12 @@ class LocalReferenceFoodDataSource extends SpFoodDataSource {
   }) async {
     final results = await Future.wait([
       for (final source in _sources)
-        source.fetchSearchWordResults(
-          searchString,
-          forResolution: forResolution,
-        ),
+        source
+            .fetchSearchWordResults(searchString, forResolution: forResolution)
+            .catchError((Object e) {
+              log.warning('Local food source failed: $e');
+              return const <SpFoodDTO>[];
+            }),
     ]);
     return [for (final list in results) ...list];
   }
