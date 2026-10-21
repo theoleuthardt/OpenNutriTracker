@@ -282,6 +282,16 @@ void main() {
       expect(loaded.windowEnd, DateTime(2028, 2, 29));
     });
 
+    test('reloading repeats the days and the period', () async {
+      final week = TrendsPeriod.week(DateTime(2026, 10, 21));
+      final emitted = await load(LoadTrendsEvent(period: week));
+
+      expect(
+        (emitted.last as TrendsLoaded).reloadEvent,
+        LoadTrendsEvent(period: week),
+      );
+    });
+
     test('a failing data source surfaces TrendsFailed', () async {
       trackedDay.throws = true;
       final emitted = await load(const LoadTrendsEvent());

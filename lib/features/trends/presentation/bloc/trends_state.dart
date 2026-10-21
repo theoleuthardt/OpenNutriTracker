@@ -42,6 +42,11 @@ class TrendsLoaded extends TrendsState {
     required this.waterGoalMl,
   });
 
+  /// Loads the same days or period again, for the screens that refresh the
+  /// trends after a change elsewhere.
+  LoadTrendsEvent get reloadEvent =>
+      LoadTrendsEvent(rangeDays: rangeDays, period: period);
+
   @override
   List<Object?> get props => [
         rangeDays,

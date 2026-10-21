@@ -659,9 +659,7 @@ class _WeightCard extends StatelessWidget {
   /// longer lives only behind the home widget.
   Future<void> _logWeight(BuildContext context) async {
     final trendsBloc = context.read<TrendsBloc>();
-    final loaded = trendsBloc.state is TrendsLoaded
-        ? trendsBloc.state as TrendsLoaded
-        : null;
+    final trendsState = trendsBloc.state;
     final user = await locator<GetUserUsecase>().getUserData();
     if (!context.mounted) return;
     final entered = await showDialog<({double weight, DateTime date})>(
@@ -685,8 +683,9 @@ class _WeightCard extends StatelessWidget {
     final updated = await locator<GetUserUsecase>().getUserData();
     await locator<ProfileBloc>().updateUser(updated);
     if (context.mounted) {
-      trendsBloc.add(LoadTrendsEvent(
-          rangeDays: loaded?.rangeDays ?? 7, period: loaded?.period));
+      trendsBloc.add(trendsState is TrendsLoaded
+          ? trendsState.reloadEvent
+          : const LoadTrendsEvent());
     }
   }
 }

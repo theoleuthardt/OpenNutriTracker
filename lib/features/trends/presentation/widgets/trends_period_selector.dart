@@ -29,7 +29,7 @@ class TrendsPeriodSelector extends StatelessWidget {
       context: context,
       firstDate: DateTime(now.year - 10),
       lastDate: DateTime(now.year, now.month, now.day),
-      initialDateRange: current == null
+      initialDateRange: current == null || current.start.isAfter(now)
           ? null
           : DateTimeRange(
               start: current.start,

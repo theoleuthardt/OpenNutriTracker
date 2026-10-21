@@ -97,4 +97,14 @@ void main() {
 
     expect(find.byType(DateRangePickerDialog), findsOneWidget);
   });
+
+  testWidgets('a future week still opens the picker', (tester) async {
+    await pump(tester, period: TrendsPeriod.week(DateTime(2026, 10, 28)));
+
+    await tester.tap(find.text(l10nEn.trendsCustomPeriodLabel));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(DateRangePickerDialog), findsOneWidget);
+  });
 }
