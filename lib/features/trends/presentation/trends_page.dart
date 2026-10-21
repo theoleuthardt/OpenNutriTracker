@@ -2,6 +2,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:logging/logging.dart';
 import 'package:opennutritracker/core/domain/entity/body_weight_unit_entity.dart';
 import 'package:opennutritracker/core/domain/entity/tracked_day_entity.dart';
 import 'package:opennutritracker/core/domain/entity/weight_log_entity.dart';
@@ -187,8 +188,10 @@ class _DeficitsSection extends StatefulWidget {
 }
 
 class _DeficitsSectionState extends State<_DeficitsSection> {
+  static final _log = Logger('DeficitsSection');
   final _threshold = locator<DeficitThresholdSetting>();
   ({bool show, List<NutrientDeficit> deficits, int percent})? _data;
+  int _generation = 0;
 
   @override
   void initState() {
@@ -202,42 +205,54 @@ class _DeficitsSectionState extends State<_DeficitsSection> {
     if (oldWidget.state != widget.state) _load();
   }
 
+  /// Loads the deficits; a call that a newer one overtook drops its result,
+  /// and a failure hides the card.
   Future<void> _load({int? percent}) async {
+    final generation = ++_generation;
     final state = widget.state;
-    final config = await locator<GetConfigUsecase>().getConfig();
-    if (!config.showMicronutrients) {
-      if (mounted) setState(() => _data = (show: false, deficits: const [], percent: 0));
-      return;
+    ({bool show, List<NutrientDeficit> deficits, int percent}) data;
+    try {
+      final config = await locator<GetConfigUsecase>().getConfig();
+      if (!config.showMicronutrients) {
+        data = (show: false, deficits: const [], percent: 0);
+      } else {
+        final threshold = percent ?? await _threshold.percent();
+        final user = await locator<GetUserUsecase>().getUserData();
+        final standard = await locator<NutrientReferenceSetting>().standard();
+        final end = state.windowEnd;
+        final start =
+            DateTime(end.year, end.month, end.day - (state.windowDays - 1));
+        final intakes =
+            await locator<GetIntakeUsecase>().getIntakesByDayBetween(
+          start,
+          end,
+          dayStartOffsetHours: config.dayStartOffsetHours,
+          dayStartOffsetMinutes: config.dayStartOffsetMinutes,
+        );
+        final trackedDays = {
+          for (final d in state.days)
+            DateTime(d.day.year, d.day.month, d.day.day): d,
+        };
+        data = (
+          show: true,
+          deficits: nutrientDeficits(
+            intakesByDay: intakes,
+            referenceOf: (key, day) => DailyNutrientPanel.referenceFor(
+              key,
+              trackedDay: trackedDays[day],
+              user: user,
+              standard: standard,
+            ).amount,
+            threshold: threshold / 100,
+          ),
+          percent: threshold,
+        );
+      }
+    } catch (error, stackTrace) {
+      _log.warning('Nutrient deficits failed', error, stackTrace);
+      data = (show: false, deficits: const [], percent: 0);
     }
-    final threshold = percent ?? await _threshold.percent();
-    final user = await locator<GetUserUsecase>().getUserData();
-    final standard = await locator<NutrientReferenceSetting>().standard();
-    final end = state.windowEnd;
-    final start =
-        DateTime(end.year, end.month, end.day - (state.windowDays - 1));
-    final intakes = await locator<GetIntakeUsecase>().getIntakesByDayBetween(
-      start,
-      end,
-      dayStartOffsetHours: config.dayStartOffsetHours,
-      dayStartOffsetMinutes: config.dayStartOffsetMinutes,
-    );
-    final trackedDays = {
-      for (final d in state.days) DateTime(d.day.year, d.day.month, d.day.day): d,
-    };
-    final deficits = nutrientDeficits(
-      intakesByDay: intakes,
-      referenceOf: (key, day) => DailyNutrientPanel.referenceFor(
-        key,
-        trackedDay: trackedDays[day],
-        user: user,
-        standard: standard,
-      ).amount,
-      threshold: threshold / 100,
-    );
-    if (mounted) {
-      setState(() =>
-          _data = (show: true, deficits: deficits, percent: threshold));
-    }
+    if (mounted && generation == _generation) setState(() => _data = data);
   }
 
   @override
