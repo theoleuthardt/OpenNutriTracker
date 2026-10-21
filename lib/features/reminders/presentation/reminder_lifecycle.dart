@@ -19,12 +19,14 @@ S _stringsFor(Locale locale) =>
     lookupS(basicLocaleListResolution([locale], S.supportedLocales));
 
 /// Puts the stored reminders into the notification schedule with the texts
-/// of [locale], or of the stored or device language (#71). Does nothing
-/// while no reminder is switched on; the reminders screen syncs itself after
-/// every edit, which also clears switched-off ones. Never throws.
-Future<void> syncReminders({Locale? locale}) async {
+/// of [locale], or of the stored or device language (#71). Unless [always],
+/// it does nothing while no reminder is switched on; the reminders screen
+/// syncs itself after every edit, and a restored backup passes [always] so
+/// reminders it switched off are cleared too. Never throws.
+Future<void> syncReminders({Locale? locale, bool always = false}) async {
   try {
-    if (!(await locator<ReminderStore>().load()).any((r) => r.enabled)) {
+    if (!always &&
+        !(await locator<ReminderStore>().load()).any((r) => r.enabled)) {
       return;
     }
     final code = await locator<ConfigDataSource>().getSelectedLocale();

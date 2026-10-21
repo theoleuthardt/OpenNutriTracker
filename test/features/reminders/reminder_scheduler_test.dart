@@ -21,6 +21,7 @@ class _Store implements ReminderStore {
 }
 
 class _Notifications extends NotificationService {
+  final log = <String>[];
   final cancelled = <int>{};
   var legacyCancelled = false;
   final scheduled =
@@ -32,7 +33,11 @@ class _Notifications extends NotificationService {
   Future<void> cancelDailyReminder() async => legacyCancelled = true;
 
   @override
-  Future<void> cancelIds(Iterable<int> ids) async => cancelled.addAll(ids);
+  Future<void> cancelIds(Iterable<int> ids) async {
+    log.add('cancel');
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    cancelled.addAll(ids);
+  }
 
   @override
   Future<void> scheduleWeekly({
@@ -44,14 +49,18 @@ class _Notifications extends NotificationService {
     required String body,
     required String channelName,
     required String channelDescription,
-  }) async => scheduled.add((
-    id: id,
-    weekday: weekday,
-    hour: hour,
-    minute: minute,
-    title: title,
-    body: body,
-  ));
+  }) async {
+    log.add('schedule');
+    await Future<void>.delayed(const Duration(milliseconds: 1));
+    scheduled.add((
+      id: id,
+      weekday: weekday,
+      hour: hour,
+      minute: minute,
+      title: title,
+      body: body,
+    ));
+  }
 }
 
 Reminder _reminder(
@@ -151,5 +160,19 @@ void main() {
     };
 
     expect(texts, hasLength(ReminderType.values.length));
+  });
+
+  test('overlapping syncs run one after the other', () async {
+    final notifications = _Notifications();
+    final scheduler = ReminderScheduler(
+      _Store([
+        _reminder(ReminderType.water, {1}),
+      ]),
+      notifications,
+    );
+
+    await Future.wait([scheduler.sync(l10nEn), scheduler.sync(l10nEn)]);
+
+    expect(notifications.log, ['cancel', 'schedule', 'cancel', 'schedule']);
   });
 }

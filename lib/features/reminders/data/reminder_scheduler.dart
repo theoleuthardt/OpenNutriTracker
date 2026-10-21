@@ -29,7 +29,17 @@ class ReminderScheduler {
 
   ReminderScheduler(this._store, this._notifications);
 
-  Future<void> sync(S s) async {
+  Future<void> _last = Future.value();
+
+  /// Runs after any sync still in progress, so two runs never interleave
+  /// their cancelling and scheduling.
+  Future<void> sync(S s) {
+    final run = _last.catchError((_) {}).then((_) => _sync(s));
+    _last = run;
+    return run;
+  }
+
+  Future<void> _sync(S s) async {
     final plan = planReminders(await _store.load());
     await _notifications.cancelDailyReminder();
     await _notifications.cancelIds(reminderNotificationIds);

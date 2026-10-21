@@ -13,7 +13,6 @@ import 'package:opennutritracker/core/utils/notification_service.dart';
 import 'package:opennutritracker/features/profile/presentation/utils/profile_switch_coordinator.dart';
 import 'package:opennutritracker/features/reminders/data/reminder_scheduler.dart';
 import 'package:opennutritracker/features/reminders/data/reminder_store.dart';
-import 'package:opennutritracker/features/reminders/domain/reminder.dart';
 import 'package:opennutritracker/features/onboarding/domain/entity/user_activity_selection_entity.dart';
 import 'package:opennutritracker/features/onboarding/domain/entity/user_gender_selection_entity.dart';
 import 'package:opennutritracker/features/onboarding/domain/entity/user_goal_selection_entity.dart';
@@ -465,16 +464,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       }
       return false;
     }
-    await locator<ReminderStore>().save(const [
-      Reminder(
-        id: 'daily',
-        type: ReminderType.logMeals,
-        hour: 8,
-        minute: 0,
-        weekdays: Reminder.everyDay,
-        enabled: true,
-      ),
-    ]);
+    await locator<ReminderStore>().addDailyReminder();
     await locator<ReminderScheduler>().sync(l10n);
     return true;
   }

@@ -87,4 +87,49 @@ void main() {
 
     expect(changes, 1);
   });
+
+  test('a broken stored list reads as empty instead of failing', () async {
+    await config.setRemindersJson('{not json');
+
+    expect(await store.load(), isEmpty);
+  });
+
+  test('the onboarding reminder joins the existing ones', () async {
+    const water = Reminder(
+      id: 'w',
+      type: ReminderType.water,
+      hour: 10,
+      minute: 0,
+      weekdays: Reminder.everyDay,
+      enabled: true,
+    );
+    await store.save(const [water]);
+
+    await store.addDailyReminder();
+    await store.addDailyReminder();
+
+    final reminders = await store.load();
+    expect(reminders.first, water);
+    expect(
+      reminders.where((r) => r.type == ReminderType.logMeals),
+      hasLength(1),
+    );
+    expect(reminders.last.hour, 8);
+    expect(reminders.last.enabled, isTrue);
+  });
+
+  test('the onboarding reminder switches a stored one back on', () async {
+    await store.save([
+      (await (() async {
+        await store.addDailyReminder();
+        return (await store.load()).single;
+      })()).copyWith(enabled: false, hour: 20),
+    ]);
+
+    await store.addDailyReminder();
+
+    final daily = (await store.load()).single;
+    expect(daily.enabled, isTrue);
+    expect(daily.hour, 20);
+  });
 }
