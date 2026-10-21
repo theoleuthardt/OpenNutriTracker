@@ -1479,6 +1479,8 @@
   "offUploadDialogBody": "These values per 100 g go to product {barcode} on {server}:",
   "@offUploadDialogBody": {"placeholders": {"barcode": {"type": "String"}, "server": {"type": "String"}}},
   "offUploadLicense": "What you send is published under the Open Database License (ODbL).",
+  "offUploadPhotoCheckbox": "Also send the photo of the table",
+  "offUploadPhotoLicense": "Photos are published under Creative Commons Attribution-ShareAlike (CC BY-SA).",
   "offUploadSend": "Send",
   "offUploadSkip": "Not now",
   "offUploadDone": "Sent to Open Food Facts",
