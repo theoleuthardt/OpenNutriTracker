@@ -1,0 +1,81 @@
+name: iOS release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to create (empty for v<pubspec version>-personal.<run>)
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.name.outputs.tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Choose the tag
+        id: name
+        env:
+          REQUESTED: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            tag="${GITHUB_REF_NAME}"
+          elif [ -n "${REQUESTED}" ]; then
+            tag="${REQUESTED}"
+          else
+            version="$(sed -n 's/^version: *\([0-9.]*\).*/\1/p' pubspec.yaml)"
+            tag="v${version}-personal.${GITHUB_RUN_NUMBER}"
+          fi
+          case "${tag}" in
+            v*) ;;
+            *) echo "Tag must start with v: ${tag}" >&2; exit 1 ;;
+          esac
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+
+  build:
+    needs: tag
+    uses: ./.github/workflows/ios-ipa.yml
+    with:
+      ref: ${{ github.sha }}
+
+  release:
+    needs: [tag, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download the IPA
+        uses: actions/download-artifact@v4
+        with:
+          pattern: nutritracker-ipa-unsigned-*
+          path: ipa
+          merge-multiple: true
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.tag.outputs.name }}
+        run: |
+          set -euo pipefail
+          asset="NutriTracker-${TAG}-unsigned.ipa"
+          mv ipa/NutriTracker-unsigned.ipa "${asset}"
+          cat > notes.md <<'NOTES'
+          Unsigned IPA for sideloading. Sign it with KravaSigner and install it on the device (see PERSONAL.md, "Sideloading").
+          NOTES
+          gh release create "${TAG}" "${asset}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${GITHUB_SHA}" \
+            --title "${TAG}" \
+            --notes-file notes.md \
+            --generate-notes
