@@ -446,9 +446,13 @@ class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
     );
   }
 
-  /// One item per portion of the food (#158), with what it weighs. The
-  /// first one's value is the plain serving unit, so a food that opens on
-  /// its serving opens on its first portion.
+  /// A label that already says what the portion weighs: "1 bar (30 g)".
+  static final _statesWeight = RegExp(r'\d\s*(g|ml)\b', caseSensitive: false);
+
+  /// One item per portion of the food (#158), with what it weighs unless
+  /// the label says so already, as a food's own serving often does once it
+  /// is a portion (#164). The first one's value is the plain serving unit,
+  /// so a food that opens on its serving opens on its first portion.
   List<DropdownMenuItem<String>> _getPortionDropdownItems(
     BuildContext context,
   ) {
@@ -465,7 +469,9 @@ class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
         DropdownMenuItem(
           value: portionUnit(i),
           child: Text(
-            '${portions[i].label} · ${format.format(portions[i].gramWeight)} $unit',
+            _statesWeight.hasMatch(portions[i].label)
+                ? localizeServingLabel(S.of(context), portions[i].label)
+                : '${portions[i].label} · ${format.format(portions[i].gramWeight)} $unit',
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
           ),

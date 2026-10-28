@@ -220,4 +220,27 @@ void main() {
 
     expect(find.text('Set portion'), findsNothing);
   });
+
+  testWidgets('a portion label that states its weight is not repeated', (
+    tester,
+  ) async {
+    await _pumpSheet(
+      tester,
+      product: _egg(
+        portions: const [
+          MealPortionEntity(
+            label: '1 slice (38 g)',
+            gramWeight: 38,
+            localized: false,
+          ),
+          MealPortionEntity(label: '1 Riegel', gramWeight: 25, localized: true),
+        ],
+      ),
+      onChanged: (_, _) {},
+    );
+    await _openUnitDropdown(tester);
+
+    expect(find.textContaining('(38 g) ·'), findsNothing);
+    expect(find.text('1 Riegel · 25 g'), findsOneWidget);
+  });
 }
