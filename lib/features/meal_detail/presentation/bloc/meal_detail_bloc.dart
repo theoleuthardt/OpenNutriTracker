@@ -16,6 +16,7 @@ import 'package:opennutritracker/core/domain/usecase/get_tracked_day_usecase.dar
 import 'package:opennutritracker/core/utils/id_generator.dart';
 import 'package:opennutritracker/features/add_meal/data/repository/products_repository.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
+import 'package:opennutritracker/features/add_meal/util/portion_unit.dart';
 import 'package:opennutritracker/features/meal_detail/util/meal_quantity_converter.dart';
 
 part 'meal_detail_event.dart';
@@ -161,7 +162,7 @@ class MealDetailBloc extends Bloc<MealDetailEvent, MealDetailState> {
 
     final intakeEntity = IntakeEntity(
       id: IdGenerator.getUniqueID(),
-      unit: unit,
+      unit: storedUnit(unit),
       amount: quantity,
       type: type,
       meal: meal,

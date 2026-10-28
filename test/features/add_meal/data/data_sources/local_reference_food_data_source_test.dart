@@ -7,9 +7,16 @@ import 'package:opennutritracker/features/add_meal/domain/entity/meal_portion_en
 class _Source extends SpFoodDataSource {
   final List<SpFoodDTO> results;
   final bool fails;
+  final Map<int, String> labels;
+  final Map<int, List<MealPortionEntity>>? portions;
   final queries = <String>[];
 
-  _Source(this.results, {this.fails = false});
+  _Source(
+    this.results, {
+    this.fails = false,
+    this.labels = const {},
+    this.portions = const {},
+  });
 
   @override
   Future<List<SpFoodDTO>> fetchSearchWordResults(
@@ -23,12 +30,12 @@ class _Source extends SpFoodDataSource {
 
   @override
   Future<Map<int, String>> fetchPortionLabels(List<int> foodIds) async =>
-      const {};
+      labels;
 
   @override
   Future<Map<int, List<MealPortionEntity>>?> fetchPortions(
     List<int> foodIds,
-  ) async => const {};
+  ) async => portions;
 }
 
 void main() {
@@ -62,10 +69,40 @@ void main() {
     expect([for (final r in results) r.foodId], [1]);
   });
 
-  test('portion lookups answer empty', () async {
-    final source = LocalReferenceFoodDataSource([_Source(const [])]);
+  test('merges the portion answers of every source (#158)', () async {
+    const egg = MealPortionEntity(
+      label: '1 Ei, mittel (M)',
+      gramWeight: 50,
+      localized: true,
+    );
+    const apple = MealPortionEntity(
+      label: '1 medium apple',
+      gramWeight: 182,
+      localized: false,
+    );
+    final source = LocalReferenceFoodDataSource([
+      _Source(
+        const [],
+        labels: {1: '1 Ei, mittel (M) (50 g)'},
+        portions: {
+          1: [egg],
+        },
+      ),
+      _Source(const [], portions: null),
+      _Source(
+        const [],
+        portions: {
+          3: [apple],
+        },
+      ),
+    ]);
 
-    expect(await source.fetchPortionLabels([1]), isEmpty);
-    expect(await source.fetchPortions([1]), isEmpty);
+    expect(await source.fetchPortionLabels([1, 3]), {
+      1: '1 Ei, mittel (M) (50 g)',
+    });
+    expect(await source.fetchPortions([1, 3]), {
+      1: [egg],
+      3: [apple],
+    });
   });
 }

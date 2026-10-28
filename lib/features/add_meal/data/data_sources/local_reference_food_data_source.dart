@@ -4,8 +4,9 @@ import 'package:opennutritracker/features/add_meal/domain/entity/meal_portion_en
 
 /// The fork's reference food search: the local sources in their order, the
 /// BLS first, then FoodData Central (#80). Each source applies its own
-/// switch; none has portions. A source that fails adds no results instead
-/// of failing the search.
+/// switch and answers the portion lookups for its own ids, so the answers
+/// are merged. A source that fails adds no results instead of failing the
+/// search.
 class LocalReferenceFoodDataSource extends SpFoodDataSource {
   final List<SpFoodDataSource> _sources;
 
@@ -29,11 +30,20 @@ class LocalReferenceFoodDataSource extends SpFoodDataSource {
   }
 
   @override
-  Future<Map<int, String>> fetchPortionLabels(List<int> foodIds) async =>
-      const {};
+  Future<Map<int, String>> fetchPortionLabels(List<int> foodIds) async {
+    final answers = await Future.wait([
+      for (final source in _sources) source.fetchPortionLabels(foodIds),
+    ]);
+    return {for (final answer in answers) ...answer};
+  }
 
   @override
   Future<Map<int, List<MealPortionEntity>>?> fetchPortions(
     List<int> foodIds,
-  ) async => const {};
+  ) async {
+    final answers = await Future.wait([
+      for (final source in _sources) source.fetchPortions(foodIds),
+    ]);
+    return {for (final answer in answers) ...?answer};
+  }
 }

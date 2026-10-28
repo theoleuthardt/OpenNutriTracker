@@ -66,7 +66,7 @@ void main() {
     );
   });
 
-  test('portion lookups answer empty', () async {
+  test('portion lookups answer empty for ids outside the BLS', () async {
     expect(await source().fetchPortionLabels([1]), isEmpty);
     expect(await source().fetchPortions([1]), isEmpty);
   });

@@ -256,7 +256,9 @@ class LocalFoodCatalog<F> {
 }
 
 /// The search record of a local catalog food: [values] per 100 g in app
-/// units, keyed by app field name, a missing key meaning no value.
+/// units, keyed by app field name, a missing key meaning no value;
+/// [servingSize] and [servingGramWeight] the default portion where the
+/// source has one.
 SpFoodDTO localFoodDto({
   required int foodId,
   required String source,
@@ -264,6 +266,8 @@ SpFoodDTO localFoodDto({
   required String? name,
   String? localizedName,
   required Map<String, double> values,
+  String? servingSize,
+  double? servingGramWeight,
 }) {
   double? value(String field) => values[field];
   return SpFoodDTO(
@@ -272,6 +276,8 @@ SpFoodDTO localFoodDto({
     sourceCode: sourceCode,
     name: name,
     localizedName: localizedName,
+    servingSize: servingSize,
+    servingGramWeight: servingGramWeight,
     energyKcal100: value('energyKcal100'),
     carbohydrates100: value('carbohydrates100'),
     fat100: value('fat100'),
