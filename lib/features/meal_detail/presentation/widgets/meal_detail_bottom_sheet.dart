@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:opennutritracker/core/styles/app_palette.dart';
 import 'package:opennutritracker/core/styles/dimens.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
@@ -10,6 +11,7 @@ import 'package:opennutritracker/core/utils/serving_label_localizer.dart';
 import 'package:opennutritracker/core/utils/navigation_options.dart';
 import 'package:opennutritracker/core/utils/navigation_predicates.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
+import 'package:opennutritracker/features/add_meal/util/portion_unit.dart';
 import 'package:opennutritracker/features/diary/presentation/bloc/calendar_day_bloc.dart';
 import 'package:opennutritracker/features/diary/presentation/bloc/diary_bloc.dart';
 import 'package:opennutritracker/features/home/presentation/bloc/home_bloc.dart';
@@ -184,7 +186,11 @@ class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
                               items: <DropdownMenuItem<String>>[
                                 // #629: a serving the app cannot scale
                                 // is a no-op dressed as a unit.
-                                if (widget.product.scalableServingQuantity !=
+                                if (widget.product.portions.isNotEmpty)
+                                  ..._getPortionDropdownItems(context)
+                                else if (widget
+                                        .product
+                                        .scalableServingQuantity !=
                                     null)
                                   _getServingDropdownItem(context),
                                 if (widget.product.isSolid ||
@@ -422,6 +428,33 @@ class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
       value: UnitDropdownItem.serving.toString(),
       child: Text(servingText, overflow: TextOverflow.ellipsis, maxLines: 1),
     );
+  }
+
+  /// One item per portion of the food (#158), with what it weighs. The
+  /// first one's value is the plain serving unit, so a food that opens on
+  /// its serving opens on its first portion.
+  List<DropdownMenuItem<String>> _getPortionDropdownItems(
+    BuildContext context,
+  ) {
+    final unit = widget.product.isLiquid
+        ? S.of(context).milliliterUnit
+        : S.of(context).gramUnit;
+    final format = NumberFormat(
+      '0.#',
+      Localizations.localeOf(context).toString(),
+    );
+    final portions = widget.product.portions;
+    return [
+      for (var i = 0; i < portions.length; i++)
+        DropdownMenuItem(
+          value: portionUnit(i),
+          child: Text(
+            '${portions[i].label} · ${format.format(portions[i].gramWeight)} $unit',
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ),
+    ];
   }
 
   List<DropdownMenuItem<String>> _getSolidUnitDropdownItems(
