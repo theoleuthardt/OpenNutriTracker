@@ -203,7 +203,7 @@ class _HomeRecipesSectionState extends State<HomeRecipesSection> {
             )
           else
             SizedBox(
-              height: 92,
+              height: MediaQuery.textScalerOf(context).scale(92),
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: data.recipes.length,

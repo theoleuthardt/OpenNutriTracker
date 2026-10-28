@@ -37,8 +37,9 @@ void main() {
 
   Future<void> pump(
     WidgetTester tester,
-    ({bool visible, List<RecipeEntity> recipes}) data,
-  ) async {
+    ({bool visible, List<RecipeEntity> recipes}) data, {
+    double textScale = 1,
+  }) async {
     logged = [];
     pushed = [];
     await tester.pumpWidget(
@@ -52,6 +53,12 @@ void main() {
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: const [Locale('en')],
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(textScale)),
+            child: child!,
+          ),
           onGenerateRoute: (settings) {
             if (settings.name != '/') pushed.add(settings);
             return MaterialPageRoute<void>(
@@ -123,5 +130,14 @@ void main() {
 
     expect(find.text(l10nEn.recipesLabel), findsNothing);
     expect(find.text('Porridge'), findsNothing);
+  });
+
+  testWidgets('a card fits at twice the text size', (tester) async {
+    await pump(tester, (
+      visible: true,
+      recipes: [_recipe('Overnight oats with berries and honey', servings: 2)],
+    ), textScale: 2);
+
+    expect(tester.takeException(), isNull);
   });
 }
