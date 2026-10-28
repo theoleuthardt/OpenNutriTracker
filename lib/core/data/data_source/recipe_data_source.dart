@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:opennutritracker/core/data/dbo/recipe_dbo.dart';
 import 'package:opennutritracker/core/utils/hive_db_provider.dart';
@@ -24,6 +25,9 @@ class RecipeDataSource {
   }
 
   List<RecipeDBO> getAllRecipes() => _recipeBox.values.toList();
+
+  /// Fires when a recipe is saved or deleted (#159).
+  Listenable get changes => _recipeBox.listenable();
 
   RecipeDBO? getRecipeById(String id) {
     for (final recipe in _recipeBox.values) {

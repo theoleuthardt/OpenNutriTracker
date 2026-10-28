@@ -26,6 +26,7 @@ import 'package:opennutritracker/features/diary/presentation/bloc/diary_bloc.dar
 import 'package:opennutritracker/features/home/presentation/bloc/home_bloc.dart';
 import 'package:opennutritracker/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:opennutritracker/features/off_contribution/presentation/off_contribution_screen.dart';
+import 'package:opennutritracker/features/recipes/domain/home_recipes_setting.dart';
 import 'package:opennutritracker/features/reminders/presentation/reminder_lifecycle.dart';
 import 'package:opennutritracker/features/reminders/presentation/reminders_screen.dart';
 import 'package:opennutritracker/features/settings/presentation/bloc/settings_bloc.dart';
@@ -356,6 +357,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _diaryBloc.add(const LoadDiaryYearEvent());
                     },
                   ),
+                  _HomeRecipesTile(palette: palette),
                   _SettingsSwitchTile(
                     palette: palette,
                     icon: Icons.bar_chart_rounded,
@@ -1565,4 +1567,42 @@ class _SettingsIconChip extends StatelessWidget {
       child: Icon(icon, color: color, size: 22),
     );
   }
+}
+
+/// The switch for the recipes section of the home page (#159).
+class _HomeRecipesTile extends StatefulWidget {
+  final AppPalette palette;
+
+  const _HomeRecipesTile({required this.palette});
+
+  @override
+  State<_HomeRecipesTile> createState() => _HomeRecipesTileState();
+}
+
+class _HomeRecipesTileState extends State<_HomeRecipesTile> {
+  final _setting = locator<HomeRecipesSetting>();
+  bool _visible = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _setting.visible().then((visible) {
+      if (mounted) setState(() => _visible = visible);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    identifier: 'settings-home-recipes',
+    child: _SettingsSwitchTile(
+      palette: widget.palette,
+      icon: Icons.menu_book_rounded,
+      title: S.of(context).settingsShowHomeRecipes,
+      value: _visible,
+      onChanged: (bool value) {
+        setState(() => _visible = value);
+        _setting.save(value);
+      },
+    ),
+  );
 }

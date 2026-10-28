@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:opennutritracker/core/data/data_source/recipe_data_source.dart';
 import 'package:opennutritracker/core/data/dbo/recipe_dbo.dart';
 import 'package:opennutritracker/core/domain/entity/recipe_entity.dart';
@@ -9,6 +10,9 @@ class RecipeRepository {
 
   Future<void> saveRecipe(RecipeEntity recipe) =>
       _dataSource.saveRecipe(recipe.toDBO());
+
+  /// See [RecipeDataSource.changes].
+  Listenable get changes => _dataSource.changes;
 
   List<RecipeEntity> getAllRecipes() =>
       _dataSource.getAllRecipes().map(RecipeEntity.fromDBO).toList();
