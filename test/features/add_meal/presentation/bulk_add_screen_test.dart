@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'dart:async';
+import 'package:opennutritracker/features/recipes/domain/recipe_text_ingredient.dart';
 import 'package:opennutritracker/core/utils/ai_credential_storage.dart';
 import 'package:opennutritracker/core/utils/ai_model_catalogue.dart';
 import 'package:opennutritracker/features/add_meal/domain/meal_photo_interpreter.dart';
@@ -465,6 +466,7 @@ class _PushRecorder extends NavigatorObserver {
 
 Widget _app({
   bool imperial = false,
+  bool forRecipe = false,
   Locale? locale,
   List<RouteSettings>? pushed,
 }) => ChangeNotifierProvider<EnergyUnitProvider>(
@@ -506,6 +508,7 @@ Widget _app({
             IntakeTypeEntity.breakfast,
             DateTime(2026, 8, 10),
             imperial,
+            forRecipe: forRecipe,
           ),
         ),
         builder: (_) => const BulkAddScreen(),
@@ -531,6 +534,90 @@ Finder _submitButton() => find.widgetWithIcon(FilledButton, Icons.add_rounded);
 
 void main() {
   tearDown(() async => getIt.reset());
+
+  group('for a recipe (#160)', () {
+    Future<Future<Object?>> pushForRecipe(WidgetTester tester) async {
+      await tester.pumpWidget(_app(forRecipe: true));
+      final result = tester
+          .state<NavigatorState>(find.byType(Navigator))
+          .pushNamed<Object?>('/bulk');
+      await tester.pumpAndSettle();
+      return result;
+    }
+
+    testWidgets('the checked rows come back as ingredients, nothing is logged', (
+      tester,
+    ) async {
+      await _register({
+        'oats': [_meal('Oats')],
+        'milk': [_meal('Milk', mealUnit: 'ml')],
+        'bread': [
+          _meal(
+            'Bread',
+            servingQuantity: 38,
+            portions: const [
+              MealPortionEntity(
+                label: '1 slice',
+                gramWeight: 38,
+                localized: false,
+              ),
+            ],
+          ),
+        ],
+      });
+      final result = await pushForRecipe(tester);
+
+      expect(find.text(l10nEn.recipeFromTextTitle), findsOneWidget);
+      await tester.enterText(
+        find.byType(TextField).first,
+        '200 g oats, 300 ml milk, 2 bread',
+      );
+      await tester.tap(find.widgetWithIcon(FilledButton, Icons.search));
+      await tester.pumpAndSettle();
+      expect(find.text(l10nEn.recipeFromTextSubmit(3)), findsOneWidget);
+      await tester.tap(_submitButton());
+      await tester.pumpAndSettle();
+
+      final ingredients = (await result)! as List<RecipeTextIngredient>;
+      expect(
+        [for (final i in ingredients) (i.meal.name, i.amount, i.unit)],
+        [('Oats', 200.0, 'g'), ('Milk', 300.0, 'ml'), ('Bread', 76.0, 'g')],
+      );
+      expect(_mealDetailBloc.writes, isEmpty);
+    });
+
+    testWidgets('a row without a match offers no quick add', (tester) async {
+      await _register(const {});
+      await pushForRecipe(tester);
+
+      await tester.enterText(find.byType(TextField).first, '200 g unicorn');
+      await tester.tap(find.widgetWithIcon(FilledButton, Icons.search));
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10nEn.bulkAddSkipLabel), findsOneWidget);
+      expect(find.text(l10nEn.quickAddCardLabel), findsNothing);
+    });
+
+    testWidgets('outside a recipe it is still offered', (tester) async {
+      await _register(const {});
+      await tester.pumpWidget(_app());
+
+      await _parse(tester, '200 g unicorn');
+
+      expect(find.text(l10nEn.quickAddCardLabel), findsOneWidget);
+    });
+
+    testWidgets('going back adds nothing', (tester) async {
+      await _register(const {});
+      final result = await pushForRecipe(tester);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      expect(await result, isNull);
+    });
+  });
+
 
   testWidgets('a rejected key is stated, and fits a phone in German', (
     tester,

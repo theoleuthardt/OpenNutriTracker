@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:opennutritracker/features/recipes/presentation/screens/recipe_builder_screen.dart';
 import 'package:opennutritracker/core/domain/usecase/delete_recipe_usecase.dart';
 import 'package:opennutritracker/core/domain/usecase/get_config_usecase.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
@@ -96,6 +97,19 @@ class _RecipesPageState extends State<RecipesPage>
                 ),
               ),
               PopupMenuItem(
+                value: _RecipesAction.newRecipeFromText,
+                child: Semantics(
+                  identifier: 'recipes-new-from-text',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.notes_rounded),
+                      const SizedBox(width: Dimens.spacing12),
+                      Text(S.of(context).recipeNewFromTextAction),
+                    ],
+                  ),
+                ),
+              ),
+              PopupMenuItem(
                 value: _RecipesAction.newCustomMeal,
                 child: Row(
                   children: [
@@ -152,6 +166,12 @@ class _RecipesPageState extends State<RecipesPage>
     switch (action) {
       case _RecipesAction.newRecipe:
         await Navigator.of(context).pushNamed(NavigationOptions.recipeBuilderRoute);
+        _bloc.add(const LoadRecipesEvent());
+      case _RecipesAction.newRecipeFromText:
+        await Navigator.of(context).pushNamed(
+          NavigationOptions.recipeBuilderRoute,
+          arguments: const RecipeBuilderArguments(startFromText: true),
+        );
         _bloc.add(const LoadRecipesEvent());
       case _RecipesAction.newCustomMeal:
         await Navigator.of(context).pushNamed(
@@ -451,4 +471,4 @@ class _RecipesPageState extends State<RecipesPage>
   }
 }
 
-enum _RecipesAction { newRecipe, newCustomMeal, importRecipe }
+enum _RecipesAction { newRecipe, newRecipeFromText, newCustomMeal, importRecipe }

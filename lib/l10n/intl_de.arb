@@ -982,6 +982,10 @@
     }
   },
   "recipeIngredientUnitLabel": "Einheit",
+  "recipeFromTextTitle": "Zutaten aus Text",
+  "recipeFromTextSubmit": "{count, plural, =1{1 Zutat übernehmen} other{{count} Zutaten übernehmen}}",
+  "recipeFromTextAction": "Zutaten aus Text",
+  "recipeNewFromTextAction": "Neues Rezept aus Text",
   "recipeIngredientsLabel": "Zutaten",
   "recipeInvalidTotalWeightLabel": "Gesamtgewicht muss größer als null sein",
   "recipeLogCtaLabel": "Dieses Rezept loggen",
