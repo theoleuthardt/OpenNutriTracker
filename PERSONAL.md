@@ -98,6 +98,19 @@ unsignierte IPA:
 2. Artefakt `nutritracker-ipa-unsigned-<run>` herunterladen (30 Tage gültig) und
    entpacken: darin liegt `NutriTracker-unsigned.ipa`.
 
+Ein dauerhafter **GitHub-Release** mit der IPA als Asset (das Artefakt oben
+verfällt nach 30 Tagen) kommt aus dem Workflow **iOS release**
+(`.github/workflows/ios-release.yml`):
+
+- GitHub → Actions → *iOS release* → *Run workflow* auf `personal`. Ohne Eingabe
+  heißt der Tag `v<Version aus pubspec.yaml>-personal.<Lauf>`, z. B.
+  `v2.4.0-personal.3`; ein eigener Tag muss mit `v` anfangen.
+- Oder einen Tag `v…` pushen: `git tag v2.4.0-personal.1 && git push origin v2.4.0-personal.1`.
+
+Der Workflow baut über denselben Job wie oben (`ios-ipa.yml` als `workflow_call`)
+und legt den Release mit `NutriTracker-<tag>-unsigned.ipa` und automatisch
+erzeugten Notizen an. Herunterladen unter GitHub → Releases.
+
 Lokal (optional, macOS mit Xcode und CocoaPods):
 
 ```sh

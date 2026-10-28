@@ -7,6 +7,12 @@ on:
         description: Branch, tag or SHA to build
         required: false
         default: personal
+  workflow_call:
+    inputs:
+      ref:
+        description: Branch, tag or SHA to build
+        type: string
+        required: true
   push:
     branches:
       - personal
@@ -15,7 +21,7 @@ on:
       - personal
 
 concurrency:
-  group: ios-ipa-${{ github.ref }}
+  group: ios-ipa-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
