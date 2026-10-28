@@ -26,6 +26,8 @@ import 'package:opennutritracker/features/body_measurements/data/body_measuremen
 import 'package:opennutritracker/features/body_measurements/domain/body_measurement.dart';
 import 'package:opennutritracker/features/favorites/data/favorite_data_source.dart';
 import 'package:opennutritracker/features/favorites/domain/favorite_entry.dart';
+import 'package:opennutritracker/features/portions/data/own_portion_data_source.dart';
+import 'package:opennutritracker/features/portions/domain/own_portion.dart';
 import 'package:opennutritracker/features/settings/domain/export_import_failure.dart';
 import 'package:opennutritracker/features/settings/domain/personal_backup_extras.dart';
 
@@ -618,6 +620,82 @@ void main() {
         throwsA(isA<ExportImportFailure>()),
       );
     });
+  });
+
+  group('own portions (#164)', () {
+    late Box<String> ownPortionBox;
+    late PersonalBackupExtras withOwnPortions;
+    late OwnPortionDataSource ownPortions;
+
+    setUp(() async {
+      ownPortionBox = await Hive.openBox<String>('own_portions_test');
+      final provider = FakeHiveDBProvider(
+        waterIntakeBox: waterBox,
+        customMealBox: customMealBox,
+        userBox: userBox,
+        configBox: configBox,
+        appConfigBox: appConfigBox,
+        fastingBox: fastingBox,
+        ownPortionBox: ownPortionBox,
+      );
+      ownPortions = OwnPortionDataSource(provider);
+      withOwnPortions = PersonalBackupExtras(
+        WaterIntakeRepository(WaterIntakeDataSource(provider)),
+        CustomMealDataSource(provider),
+        userDataSource,
+        configDataSource,
+        FastingDataSource(provider),
+        ownPortions: ownPortions,
+      );
+    });
+
+    test('are written as own_portions.json and restored', () async {
+      await ownPortions.save('4001234567890', const [
+        OwnPortion(label: 'Riegel', amount: 25),
+        OwnPortion(label: 'Packung', amount: 150),
+      ]);
+      final archive = Archive();
+      await withOwnPortions.addTo(archive);
+      final decoded = ZipDecoder().decodeBytes(ZipEncoder().encode(archive));
+      await ownPortionBox.clear();
+
+      await withOwnPortions.prepareRestore(decoded).write();
+
+      expect(ownPortions.all(), {
+        '4001234567890': const [
+          OwnPortion(label: 'Riegel', amount: 25),
+          OwnPortion(label: 'Packung', amount: 150),
+        ],
+      });
+    });
+
+    test('a malformed file is rejected before anything is written', () {
+      final archive = Archive()
+        ..addFile(
+          ArchiveFile.bytes(
+            PersonalBackupExtras.ownPortionsFileName,
+            utf8.encode('[{"code": "a", "portions": [{"label": "Stück"}]}]'),
+          ),
+        );
+
+      expect(
+        () => withOwnPortions.prepareRestore(archive),
+        throwsA(isA<ExportImportFailure>()),
+      );
+    });
+
+    test(
+      'a backup without the file restores nothing and fails nothing',
+      () async {
+        await ownPortions.save('a', const [
+          OwnPortion(label: 'Stück', amount: 5),
+        ]);
+
+        await withOwnPortions.prepareRestore(Archive()).write();
+
+        expect(ownPortions.all().keys, ['a']);
+      },
+    );
   });
 
   group('body measurements', () {

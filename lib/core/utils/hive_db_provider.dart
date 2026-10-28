@@ -66,6 +66,9 @@ class HiveDBProvider extends ChangeNotifier {
   // Fork (#43): the profile's body measurements, as `BodyMeasurement` JSON
   // keyed by id.
   static const bodyMeasurementBoxName = 'BodyMeasurementBox';
+  // Fork (#164): the user's own portions per food, as `OwnPortion` JSON
+  // lists keyed by the food's code. Global like the custom meals.
+  static const ownPortionBoxName = 'OwnPortionBox';
   // #471: registry of profiles. Global — shared across every profile so
   // the app can enumerate and switch profiles before any one of them is
   // active.
@@ -106,6 +109,7 @@ class HiveDBProvider extends ChangeNotifier {
   late final Box<MealDBO> customMealBox;
   late final Box<RecipeDBO> recipeBox;
   late final Box<CustomActivityTemplateDBO> customActivityTemplateBox;
+  late final Box<String> ownPortionBox;
 
   // Per-profile boxes. Nullable rather than `late` so that a read during
   // the brief close/open window of a profile switch throws a descriptive
@@ -193,6 +197,7 @@ class HiveDBProvider extends ChangeNotifier {
     customActivityTemplateBox = await _openEncryptedBox(
       customActivityTemplateBoxName,
     );
+    ownPortionBox = await _openEncryptedBox(ownPortionBoxName);
   }
 
   /// Opens the per-profile box-set for [profileId] / [boxSuffix] and

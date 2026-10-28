@@ -30,6 +30,7 @@ const _coverage = <String, String>{
   HiveDBProvider.cachedOffMealTimestampsBoxName: _excludedCache,
   HiveDBProvider.fastingBoxName: PersonalBackupExtras.fastingSessionsFileName,
   HiveDBProvider.favoriteBoxName: PersonalBackupExtras.favoritesFileName,
+  HiveDBProvider.ownPortionBoxName: PersonalBackupExtras.ownPortionsFileName,
   HiveDBProvider.bodyMeasurementBoxName:
       PersonalBackupExtras.bodyMeasurementsFileName,
 };

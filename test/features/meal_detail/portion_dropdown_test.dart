@@ -102,6 +102,7 @@ Future<void> _pumpSheet(
   required void Function(String?, String?) onChanged,
   MealDetailBloc? bloc,
   String selectedUnit = 'serving',
+  VoidCallback? onEditOwnPortions,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -116,6 +117,7 @@ Future<void> _pumpSheet(
           mealDetailBloc: bloc ?? _buildBloc(),
           selectedUnit: selectedUnit,
           onQuantityOrUnitChanged: onChanged,
+          onEditOwnPortions: onEditOwnPortions,
         ),
       ),
     ),
@@ -194,5 +196,28 @@ void main() {
 
     expect(addIntake.added.single.unit, 'serving');
     expect(addIntake.added.single.amount, 112);
+  });
+
+  testWidgets('offers to set own portions when the screen can (#164)', (
+    tester,
+  ) async {
+    var opened = 0;
+    await _pumpSheet(
+      tester,
+      product: _egg(),
+      onChanged: (_, _) {},
+      onEditOwnPortions: () => opened++,
+    );
+
+    await tester.tap(find.text('Set portion'));
+    await tester.pumpAndSettle();
+
+    expect(opened, 1);
+  });
+
+  testWidgets('without a way to save them there is no button', (tester) async {
+    await _pumpSheet(tester, product: _egg(), onChanged: (_, _) {});
+
+    expect(find.text('Set portion'), findsNothing);
   });
 }

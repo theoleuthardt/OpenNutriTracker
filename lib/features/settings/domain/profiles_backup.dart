@@ -174,6 +174,7 @@ class ProfilesBackup {
         if (!replaceExisting) return;
         await _clearProfileData(_db);
         await _db.customMealBox.clear();
+        await _db.ownPortionBox.clear();
         await _db.recipeBox.clear();
         await _db.customActivityTemplateBox.clear();
         for (final local in _profiles.getAllProfiles()) {

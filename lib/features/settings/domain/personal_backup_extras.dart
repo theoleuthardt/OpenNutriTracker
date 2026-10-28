@@ -21,6 +21,8 @@ import 'package:opennutritracker/features/body_measurements/domain/body_measurem
 import 'package:opennutritracker/features/fasting/data/data_source/fasting_data_source.dart';
 import 'package:opennutritracker/features/favorites/data/favorite_data_source.dart';
 import 'package:opennutritracker/features/favorites/domain/favorite_entry.dart';
+import 'package:opennutritracker/features/portions/data/own_portion_data_source.dart';
+import 'package:opennutritracker/features/portions/domain/own_portion.dart';
 import 'package:opennutritracker/features/settings/domain/export_import_failure.dart';
 import 'package:opennutritracker/features/settings/domain/profiles_backup.dart';
 
@@ -54,6 +56,10 @@ class PersonalBackupExtras {
 
   /// The profile's body measurements (#43, [BodyMeasurement]).
   static const bodyMeasurementsFileName = 'body_measurements.json';
+
+  /// The user's own portions per food (#164, [OwnPortion]), shared by
+  /// every profile like the custom meals: a list of `{code, portions}`.
+  static const ownPortionsFileName = 'own_portions.json';
 
   /// The `ConfigDBO` JSON keys that `app_settings.json` carries: the
   /// device-wide preferences. Left out on purpose are the legal and consent
@@ -103,6 +109,7 @@ class PersonalBackupExtras {
   final FastingDataSource _fastingDataSource;
   final FavoriteDataSource? _favoriteDataSource;
   final BodyMeasurementDataSource? _bodyMeasurementDataSource;
+  final OwnPortionDataSource? _ownPortionDataSource;
 
   /// The other profiles' folders; null for the extras of a single profile's
   /// folder, which must not recurse into the profile list.
@@ -117,9 +124,11 @@ class PersonalBackupExtras {
     ProfilesBackup? profiles,
     FavoriteDataSource? favorites,
     BodyMeasurementDataSource? bodyMeasurements,
+    OwnPortionDataSource? ownPortions,
   }) : _profiles = profiles,
        _favoriteDataSource = favorites,
-       _bodyMeasurementDataSource = bodyMeasurements;
+       _bodyMeasurementDataSource = bodyMeasurements,
+       _ownPortionDataSource = ownPortions;
 
   /// Writes the fork's JSON files into [archive]. `app_settings.json`
   /// records this archive's creation as the last backup, so a restore from
@@ -143,6 +152,17 @@ class PersonalBackupExtras {
     if (bodyMeasurements != null) {
       _addJson(archive, bodyMeasurementsFileName, [
         for (final measurement in bodyMeasurements.all()) measurement.toJson(),
+      ]);
+    }
+    final ownPortions = _ownPortionDataSource;
+    if (ownPortions != null) {
+      _addJson(archive, ownPortionsFileName, [
+        for (final MapEntry(key: code, value: portions)
+            in ownPortions.all().entries)
+          {
+            'code': code,
+            'portions': [for (final portion in portions) portion.toJson()],
+          },
       ]);
     }
     _addJson(archive, customMealsFileName, [
@@ -220,6 +240,9 @@ class PersonalBackupExtras {
             archive.findFile(bodyMeasurementsFileName),
             BodyMeasurement.fromJson,
           );
+    final ownPortions = _ownPortionDataSource == null
+        ? null
+        : _decodeList(archive.findFile(ownPortionsFileName), _ownPortionsFromJson);
     final user = includeProfileAndSettings
         ? _decodeMap(archive.findFile(userProfileFileName), _userFromJson)
         : null;
@@ -266,6 +289,11 @@ class PersonalBackupExtras {
       if (bodyMeasurements != null) {
         await _bodyMeasurementDataSource!.putAll(bodyMeasurements);
       }
+      if (ownPortions != null) {
+        await _ownPortionDataSource!.putAll({
+          for (final (code, portions) in ownPortions) code: portions,
+        });
+      }
       if (user != null) {
         await _userDataSource.saveUserData(user);
       }
@@ -296,6 +324,22 @@ class PersonalBackupExtras {
       _userFromJson(json);
 
   static final _emptyConfigJson = ConfigDBO.empty().toJson();
+
+  static (String, List<OwnPortion>) _ownPortionsFromJson(
+    Map<String, dynamic> json,
+  ) {
+    final code = json['code'];
+    if (code is! String || code.isEmpty) {
+      throw const FormatException('Own portions need the food code');
+    }
+    return (
+      code,
+      [
+        for (final portion in json['portions'] as List<dynamic>)
+          OwnPortion.fromJson(portion as Map<String, dynamic>),
+      ],
+    );
+  }
 
   static Map<String, dynamic> _userToJson(UserDBO user) => {
     'birthday': user.birthday.toIso8601String(),

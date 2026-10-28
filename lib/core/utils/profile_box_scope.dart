@@ -199,6 +199,8 @@ class ProfileBoxScope extends HiveDBProvider {
   @override
   Box<MealDBO> get customMealBox => _shared.customMealBox;
   @override
+  Box<String> get ownPortionBox => _shared.ownPortionBox;
+  @override
   Box<RecipeDBO> get recipeBox => _shared.recipeBox;
   @override
   Box<CustomActivityTemplateDBO> get customActivityTemplateBox =>

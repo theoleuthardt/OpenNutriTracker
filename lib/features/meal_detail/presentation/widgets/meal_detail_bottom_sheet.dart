@@ -30,6 +30,9 @@ class MealDetailBottomSheet extends StatefulWidget {
 
   final Function(String?, String?) onQuantityOrUnitChanged;
 
+  /// Opens the food's own portions (#164); without it there is no button.
+  final VoidCallback? onEditOwnPortions;
+
   const MealDetailBottomSheet({
     super.key,
     required this.product,
@@ -39,6 +42,7 @@ class MealDetailBottomSheet extends StatefulWidget {
     required this.onQuantityOrUnitChanged,
     required this.mealDetailBloc,
     required this.selectedUnit,
+    this.onEditOwnPortions,
   });
 
   @override
@@ -234,6 +238,18 @@ class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
                                     ),
                                   ),
                               ],
+                            ),
+                          ),
+                        ),
+                      if (widget.onEditOwnPortions case final onEdit?)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Semantics(
+                            identifier: 'meal-detail-own-portions',
+                            child: TextButton.icon(
+                              onPressed: onEdit,
+                              icon: const Icon(Icons.straighten_outlined),
+                              label: Text(S.of(context).ownPortionsAction),
                             ),
                           ),
                         ),
