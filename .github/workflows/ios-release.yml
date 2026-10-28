@@ -38,9 +38,14 @@ jobs:
             tag="v${version}-personal.${GITHUB_RUN_NUMBER}"
           fi
           case "${tag}" in
+            v*/*) echo "Tag must not contain /: ${tag}" >&2; exit 1 ;;
             v*) ;;
             *) echo "Tag must start with v: ${tag}" >&2; exit 1 ;;
           esac
+          if [ "${GITHUB_REF_TYPE}" != "tag" ] && [ -n "$(git ls-remote --tags origin "refs/tags/${tag}")" ]; then
+            echo "Tag ${tag} exists already; push a new tag or pick another name" >&2
+            exit 1
+          fi
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
 
   build:
