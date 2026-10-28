@@ -1038,7 +1038,7 @@ class _BulkAddScreenState extends State<BulkAddScreen> {
     int index,
     BulkAddRow row,
   ) => [
-    if (!row.isResolved)
+    if (!row.isResolved && !_args.forRecipe)
       (label: S.of(context).quickAddCardLabel, onPressed: _showQuickAdd),
     (
       label: row.skipped

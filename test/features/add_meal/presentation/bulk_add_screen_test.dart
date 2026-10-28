@@ -586,6 +586,27 @@ void main() {
       expect(_mealDetailBloc.writes, isEmpty);
     });
 
+    testWidgets('a row without a match offers no quick add', (tester) async {
+      await _register(const {});
+      await pushForRecipe(tester);
+
+      await tester.enterText(find.byType(TextField).first, '200 g unicorn');
+      await tester.tap(find.widgetWithIcon(FilledButton, Icons.search));
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10nEn.bulkAddSkipLabel), findsOneWidget);
+      expect(find.text(l10nEn.quickAddCardLabel), findsNothing);
+    });
+
+    testWidgets('outside a recipe it is still offered', (tester) async {
+      await _register(const {});
+      await tester.pumpWidget(_app());
+
+      await _parse(tester, '200 g unicorn');
+
+      expect(find.text(l10nEn.quickAddCardLabel), findsOneWidget);
+    });
+
     testWidgets('going back adds nothing', (tester) async {
       await _register(const {});
       final result = await pushForRecipe(tester);
