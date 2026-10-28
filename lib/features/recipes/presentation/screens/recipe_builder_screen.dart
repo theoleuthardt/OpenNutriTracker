@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:opennutritracker/features/recipes/domain/recipe_text_ingredient.dart';
+import 'package:opennutritracker/features/add_meal/presentation/screens/bulk_add_screen.dart';
+import 'package:opennutritracker/core/domain/usecase/get_config_usecase.dart';
+import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
 import 'package:opennutritracker/core/domain/entity/recipe_entity.dart';
 import 'package:opennutritracker/core/presentation/widgets/user_image_picker_tile.dart';
 import 'package:opennutritracker/core/styles/app_palette.dart';
@@ -23,7 +27,11 @@ import 'package:opennutritracker/generated/l10n.dart';
 
 class RecipeBuilderArguments {
   final RecipeEntity? existing;
-  const RecipeBuilderArguments({this.existing});
+
+  /// Opens the typed ingredient list right away (#160).
+  final bool startFromText;
+
+  const RecipeBuilderArguments({this.existing, this.startFromText = false});
 }
 
 class RecipeBuilderScreen extends StatefulWidget {
@@ -62,6 +70,11 @@ class _RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
       final args = ModalRoute.of(context)?.settings.arguments
           as RecipeBuilderArguments?;
       _bloc.add(InitializeBuilderEvent(existing: args?.existing));
+      if (args?.startFromText ?? false) {
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _onIngredientsFromText(),
+        );
+      }
       if (args?.existing != null) {
         final r = args!.existing!;
         _nameController.text = r.name;
@@ -268,6 +281,25 @@ class _RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
                 icon: const Icon(Icons.add_rounded),
                 label: Text(S.of(context).recipeAddIngredientLabel),
               ),
+              const SizedBox(height: Dimens.spacing8),
+              Semantics(
+                identifier: 'recipe-ingredients-from-text',
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: Dimens.spacing16,
+                    ),
+                    side: BorderSide(
+                      color: palette.border,
+                      width: Dimens.hairline,
+                    ),
+                    shape: Dimens.shapeM,
+                  ),
+                  onPressed: _onIngredientsFromText,
+                  icon: const Icon(Icons.notes_rounded),
+                  label: Text(S.of(context).recipeFromTextAction),
+                ),
+              ),
               const SizedBox(height: Dimens.spacing24),
               TextField(
                 controller: _totalWeightController,
@@ -345,6 +377,32 @@ class _RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
         ],
       ),
     );
+  }
+
+  /// Reads ingredients from a typed list on the bulk add screen and adds the
+  /// ones the user checked (#160).
+  Future<void> _onIngredientsFromText() async {
+    final config = await locator<GetConfigUsecase>().getConfig();
+    if (!mounted) return;
+    final ingredients = await Navigator.of(context).pushNamed(
+      NavigationOptions.bulkAddRoute,
+      arguments: BulkAddScreenArguments(
+        IntakeTypeEntity.snack,
+        DateTime.now(),
+        config.usesImperialFoodUnits,
+        forRecipe: true,
+      ),
+    );
+    if (ingredients is! List<RecipeTextIngredient>) return;
+    for (final ingredient in ingredients) {
+      _bloc.add(
+        AddIngredientEvent(
+          meal: ingredient.meal,
+          amount: ingredient.amount,
+          unit: ingredient.unit,
+        ),
+      );
+    }
   }
 
   Future<void> _onAddIngredient(BuildContext context) async {

@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:opennutritracker/features/recipes/domain/recipe_text_ingredient.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
 import 'package:opennutritracker/core/utils/ai_credential_storage.dart';
 import 'package:opennutritracker/features/add_meal/domain/usecase/run_ai_endpoint_probe_usecase.dart';
@@ -36,11 +37,16 @@ class BulkAddScreenArguments {
   final DateTime day;
   final bool usesImperialUnits;
 
+  /// Reads ingredients for a recipe (#160): the checked rows are handed back
+  /// as a list of `RecipeTextIngredient` instead of being logged.
+  final bool forRecipe;
+
   const BulkAddScreenArguments(
     this.intakeTypeEntity,
     this.day,
-    this.usesImperialUnits,
-  );
+    this.usesImperialUnits, {
+    this.forRecipe = false,
+  });
 }
 
 /// Type a whole meal, confirm what it matched, log it in one go.
@@ -301,7 +307,11 @@ class _BulkAddScreenState extends State<BulkAddScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(S.of(context).bulkAddTitle),
+        title: Text(
+          _args.forRecipe
+              ? S.of(context).recipeFromTextTitle
+              : S.of(context).bulkAddTitle,
+        ),
         actions: [
           // Only offered when the user has a key enabled. There is no
           // offline way to read a photo, so showing the action to everyone
@@ -1291,7 +1301,11 @@ class _BulkAddScreenState extends State<BulkAddScreen> {
                 ? null
                 : () => _onSubmitPressed(state),
             icon: const Icon(Icons.add_rounded),
-            label: Text(S.of(context).bulkAddSubmitLabel(count)),
+            label: Text(
+              _args.forRecipe
+                  ? S.of(context).recipeFromTextSubmit(count)
+                  : S.of(context).bulkAddSubmitLabel(count),
+            ),
           ),
         ),
       ),
@@ -1553,6 +1567,22 @@ class _BulkAddScreenState extends State<BulkAddScreen> {
           ),
         ),
       );
+      return;
+    }
+
+    if (_args.forRecipe) {
+      setState(_quantityErrors.clear);
+      Navigator.of(context).pop([
+        for (final write in writes)
+          RecipeTextIngredient(
+            meal: write.row.meal!,
+            amount: write.amount,
+            unit: RecipeTextIngredient.baseUnitOf(
+              write.row.effectiveUnit,
+              write.row.meal!,
+            ),
+          ),
+      ]);
       return;
     }
 
