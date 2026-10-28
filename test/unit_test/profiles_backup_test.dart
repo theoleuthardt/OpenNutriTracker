@@ -24,6 +24,8 @@ import 'package:opennutritracker/core/data/dbo/weight_log_dbo.dart';
 import 'package:opennutritracker/core/utils/backup_usecases_for.dart';
 import 'package:opennutritracker/core/utils/hive_db_provider.dart';
 import 'package:opennutritracker/core/utils/profile_box_scope.dart';
+import 'package:opennutritracker/features/portions/data/own_portion_data_source.dart';
+import 'package:opennutritracker/features/portions/domain/own_portion.dart';
 import 'package:opennutritracker/features/settings/domain/export_import_failure.dart';
 import 'package:opennutritracker/features/settings/domain/personal_backup_extras.dart';
 import 'package:opennutritracker/features/settings/domain/profiles_backup.dart';
@@ -55,6 +57,7 @@ class _Device implements ProfileScopes {
     Box<RecipeDBO> recipes,
     Box<CustomActivityTemplateDBO> templates,
     Box<ConfigDBO> appConfig,
+    Box<String> ownPortions,
   })
   shared;
   final Box<ProfileDBO> profileBox;
@@ -73,6 +76,7 @@ class _Device implements ProfileScopes {
       recipes: await _open<RecipeDBO>('recipe'),
       templates: await _open<CustomActivityTemplateDBO>('template'),
       appConfig: await _open<ConfigDBO>('app_config'),
+      ownPortions: await _open<String>('own_portions'),
     ), await _open<ProfileDBO>('profiles'));
     return device;
   }
@@ -114,6 +118,7 @@ class _Device implements ProfileScopes {
         customMealBox: shared.customMeals,
         recipeBox: shared.recipes,
         customActivityTemplateBox: shared.templates,
+        ownPortionBox: shared.ownPortions,
         profileBox: profileBox,
       );
 
@@ -233,6 +238,9 @@ void main() {
       'w1',
       WaterIntakeDBO(id: 'w1', dateTime: DateTime(2026, 10, 1), amountMl: 500),
     );
+    await OwnPortionDataSource(me).save('4001234567890', const [
+      OwnPortion(label: 'Riegel', amount: 25),
+    ]);
     return device;
   }
 
@@ -327,6 +335,9 @@ void main() {
     );
     expect(partnerBoxes.waterIntakeBox.values.single.amountMl, 500);
     expect((await UserDataSource(partnerBoxes).getUserData()).weightKG, 62);
+    expect(OwnPortionDataSource(fresh.active).all(), {
+      '4001234567890': const [OwnPortion(label: 'Riegel', amount: 25)],
+    });
   });
 
   test('importing the same backup twice adds nothing', () async {
@@ -360,9 +371,14 @@ void main() {
       }),
     );
 
+    await OwnPortionDataSource(active).save('device-only', const [
+      OwnPortion(label: 'Stück', amount: 10),
+    ]);
+
     await importInto(device, archive, replaceExisting: true);
 
     expect(active.intakeBox.values.map((i) => i.id), ['me-1']);
+    expect(OwnPortionDataSource(active).all().keys, ['4001234567890']);
     expect(
       partner.intakeBox.values.map((i) => i.id),
       unorderedEquals(['partner-1', 'partner-2']),

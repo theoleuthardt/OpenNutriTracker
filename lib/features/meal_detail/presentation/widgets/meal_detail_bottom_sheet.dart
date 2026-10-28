@@ -30,6 +30,9 @@ class MealDetailBottomSheet extends StatefulWidget {
 
   final Function(String?, String?) onQuantityOrUnitChanged;
 
+  /// Opens the food's own portions (#164); without it there is no button.
+  final VoidCallback? onEditOwnPortions;
+
   const MealDetailBottomSheet({
     super.key,
     required this.product,
@@ -39,6 +42,7 @@ class MealDetailBottomSheet extends StatefulWidget {
     required this.onQuantityOrUnitChanged,
     required this.mealDetailBloc,
     required this.selectedUnit,
+    this.onEditOwnPortions,
   });
 
   @override
@@ -237,6 +241,18 @@ class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
                             ),
                           ),
                         ),
+                      if (widget.onEditOwnPortions case final onEdit?)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Semantics(
+                            identifier: 'meal-detail-own-portions',
+                            child: TextButton.icon(
+                              onPressed: onEdit,
+                              icon: const Icon(Icons.straighten_outlined),
+                              label: Text(S.of(context).ownPortionsAction),
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: Dimens.spacing16),
                       Semantics(
                         identifier: 'meal-detail-add',
@@ -430,9 +446,13 @@ class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
     );
   }
 
-  /// One item per portion of the food (#158), with what it weighs. The
-  /// first one's value is the plain serving unit, so a food that opens on
-  /// its serving opens on its first portion.
+  /// A label that already says what the portion weighs: "1 bar (30 g)".
+  static final _statesWeight = RegExp(r'\d\s*(g|ml)\b', caseSensitive: false);
+
+  /// One item per portion of the food (#158), with what it weighs unless
+  /// the label says so already, as a food's own serving often does once it
+  /// is a portion (#164). The first one's value is the plain serving unit,
+  /// so a food that opens on its serving opens on its first portion.
   List<DropdownMenuItem<String>> _getPortionDropdownItems(
     BuildContext context,
   ) {
@@ -449,7 +469,9 @@ class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
         DropdownMenuItem(
           value: portionUnit(i),
           child: Text(
-            '${portions[i].label} · ${format.format(portions[i].gramWeight)} $unit',
+            _statesWeight.hasMatch(portions[i].label)
+                ? localizeServingLabel(S.of(context), portions[i].label)
+                : '${portions[i].label} · ${format.format(portions[i].gramWeight)} $unit',
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
           ),

@@ -145,6 +145,7 @@ import 'package:opennutritracker/features/onboarding/presentation/bloc/onboardin
 import 'package:opennutritracker/features/off_contribution/data/off_contribution_client.dart';
 import 'package:opennutritracker/features/off_contribution/data/off_contribution_settings.dart';
 import 'package:opennutritracker/features/off_contribution/presentation/off_contribution_flow.dart';
+import 'package:opennutritracker/features/portions/data/own_portion_data_source.dart';
 import 'package:opennutritracker/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:opennutritracker/features/profile/presentation/utils/profile_switch_coordinator.dart';
 import 'package:opennutritracker/features/recipes/presentation/bloc/recipe_builder_bloc.dart';
@@ -436,7 +437,10 @@ Future<void> initLocator() async {
   // drive the same screens are registered — it holds no state worth reusing
   // between one bulk-add session and the next.
   locator.registerFactory<ResolveParsedMealsUseCase>(
-    () => ResolveParsedMealsUseCase(locator()),
+    () => ResolveParsedMealsUseCase(
+      locator(),
+      ownPortions: locator<OwnPortionDataSource>().portionsFor,
+    ),
   );
   locator.registerLazySingleton<SearchProductByBarcodeUseCase>(
     () => SearchProductByBarcodeUseCase(locator(), locator(), locator()),
@@ -600,6 +604,7 @@ Future<void> initLocator() async {
       locator(),
       favorites: locator(),
       bodyMeasurements: locator(),
+      ownPortions: locator(),
       profiles: ProfilesBackup(
         hiveDBProvider,
         locator(),
@@ -760,6 +765,7 @@ Future<void> initLocator() async {
     ),
   );
   locator.registerLazySingleton(() => FavoriteDataSource(hiveDBProvider));
+  locator.registerLazySingleton(() => OwnPortionDataSource(hiveDBProvider));
   locator.registerLazySingleton(
     () => BodyMeasurementDataSource(hiveDBProvider),
   );

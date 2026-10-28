@@ -28,6 +28,9 @@ import 'package:opennutritracker/features/meal_detail/presentation/widgets/meal_
 import 'package:opennutritracker/features/meal_detail/presentation/widgets/meal_title_expanded.dart';
 import 'package:opennutritracker/features/meal_detail/presentation/widgets/missing_nutriments_card.dart';
 import 'package:opennutritracker/features/meal_detail/presentation/widgets/off_disclaimer.dart';
+import 'package:opennutritracker/features/portions/data/own_portion_data_source.dart';
+import 'package:opennutritracker/features/portions/domain/own_portion.dart';
+import 'package:opennutritracker/features/portions/presentation/own_portions_dialog.dart';
 import 'package:opennutritracker/features/scanner/domain/label_scan_meal.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
@@ -50,6 +53,7 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
   final _scrollController = ScrollController();
 
   late MealEntity meal;
+  late MealEntity _mealWithoutOwnPortions;
   late DateTime _day;
   late IntakeTypeEntity intakeTypeEntity;
 
@@ -145,7 +149,7 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
       final args =
           ModalRoute.of(context)?.settings.arguments
               as MealDetailScreenArguments;
-      meal = args.mealEntity;
+      meal = _withOwnPortions(args.mealEntity);
       _day = args.day;
       intakeTypeEntity = args.intakeTypeEntity;
       _usesImperialUnits = args.usesImperialUnits;
@@ -239,7 +243,7 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
   /// default now that serving data exists); otherwise just recompute totals
   /// against the fuller nutriments while keeping the user's selection.
   void _onMealHydrated(MealEntity full) {
-    setState(() => meal = full);
+    setState(() => meal = _withOwnPortions(full));
     if (_userChangedSelection) {
       _mealDetailBloc.add(
         UpdateKcalEvent(
@@ -253,6 +257,40 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
       _initialQuantity = "";
       _applyInitialSelection();
     }
+  }
+
+  /// [base] with the user's own portions of it (#164), remembering [base]
+  /// so a change to them can be applied again.
+  MealEntity _withOwnPortions(MealEntity base) {
+    _mealWithoutOwnPortions = base;
+    final code = base.code;
+    if (code == null || code.isEmpty) return base;
+    return withOwnPortions(
+      base,
+      locator<OwnPortionDataSource>().portionsFor(code),
+    );
+  }
+
+  /// Opens the own portions of this food and shows the food with the saved
+  /// ones, back on its default unit and amount: a deleted portion may have
+  /// been the selected one.
+  Future<void> _editOwnPortions() async {
+    final code = meal.code;
+    if (code == null || code.isEmpty) return;
+    final source = locator<OwnPortionDataSource>();
+    final saved = await showOwnPortionsDialog(
+      context,
+      initial: source.portionsFor(code),
+      unit: meal.isLiquid ? 'ml' : 'g',
+    );
+    if (saved == null) return;
+    await source.save(code, saved);
+    if (!mounted) return;
+    setState(() => meal = _withOwnPortions(_mealWithoutOwnPortions));
+    _userChangedSelection = false;
+    _initialUnit = "";
+    _initialQuantity = "";
+    _applyInitialSelection();
   }
 
   @override
@@ -298,6 +336,9 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
               mealDetailBloc: _mealDetailBloc,
               quantityTextController: quantityTextController,
               onQuantityOrUnitChanged: onQuantityOrUnitChanged,
+              onEditOwnPortions: meal.code?.isNotEmpty ?? false
+                  ? _editOwnPortions
+                  : null,
             );
           },
           ),

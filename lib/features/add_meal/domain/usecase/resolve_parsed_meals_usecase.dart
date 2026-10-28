@@ -4,6 +4,7 @@ import 'package:opennutritracker/features/add_meal/domain/usecase/search_product
 import 'package:opennutritracker/features/add_meal/util/meal_relevance_ranker.dart';
 import 'package:opennutritracker/features/add_meal/util/meal_text_parser.dart';
 import 'package:opennutritracker/features/add_meal/util/resolver_relevance.dart';
+import 'package:opennutritracker/features/portions/domain/own_portion.dart';
 
 /// Below this the top candidate is a guess rather than an answer, and the
 /// review screen (#602) should say so instead of presenting it as settled.
@@ -74,7 +75,13 @@ class ResolveParsedMealsUseCase {
 
   final SearchProductsUseCase _searchProductsUseCase;
 
-  ResolveParsedMealsUseCase(this._searchProductsUseCase);
+  /// The user's own portions of a food by its code (#164); none by default.
+  final List<OwnPortion> Function(String code) _ownPortions;
+
+  ResolveParsedMealsUseCase(
+    this._searchProductsUseCase, {
+    List<OwnPortion> Function(String code)? ownPortions,
+  }) : _ownPortions = ownPortions ?? ((_) => const []);
 
   /// Resolves every item concurrently. The two sources are independent and
   /// each already degrades to local-only results on failure inside
@@ -136,7 +143,13 @@ class ResolveParsedMealsUseCase {
     // The shared ranker scores `eggs` against `Egg` at exactly 0.0, and
     // this class auto-selects the top candidate, so its ordering alone is
     // not safe to log from. See resolver_relevance.dart.
-    final ranked = rankForResolution(merged, query);
+    final ranked = [
+      for (final meal in rankForResolution(merged, query))
+        switch (meal.code) {
+          final code? => withOwnPortions(meal, _ownPortions(code)),
+          null => meal,
+        },
+    ];
 
     if (ranked.isEmpty) {
       return ResolvedMealItem(

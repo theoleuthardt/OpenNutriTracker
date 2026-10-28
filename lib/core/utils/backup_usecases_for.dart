@@ -20,6 +20,7 @@ import 'package:opennutritracker/core/utils/hive_db_provider.dart';
 import 'package:opennutritracker/features/body_measurements/data/body_measurement_data_source.dart';
 import 'package:opennutritracker/features/favorites/data/favorite_data_source.dart';
 import 'package:opennutritracker/features/fasting/data/data_source/fasting_data_source.dart';
+import 'package:opennutritracker/features/portions/data/own_portion_data_source.dart';
 import 'package:opennutritracker/features/settings/domain/personal_backup_extras.dart';
 import 'package:opennutritracker/features/settings/domain/profiles_backup.dart';
 import 'package:opennutritracker/features/settings/domain/usecase/export_data_usecase.dart';
@@ -43,6 +44,7 @@ BackupUsecases backupUsecasesFor(
     profiles: profiles,
     favorites: FavoriteDataSource(db),
     bodyMeasurements: BodyMeasurementDataSource(db),
+    ownPortions: OwnPortionDataSource(db),
   );
   final userActivityRepository = UserActivityRepository(
     UserActivityDataSource(db),

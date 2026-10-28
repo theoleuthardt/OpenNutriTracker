@@ -32,6 +32,7 @@ class FakeHiveDBProvider extends HiveDBProvider {
   final Box<WaterIntakeDBO>? _waterIntakeBox;
   final Box<FastingSessionDBO>? _fastingBox;
   final Box<String>? _favoriteBox;
+  final Box<String>? _ownPortionBox;
   final Box<String>? _bodyMeasurementBox;
   final Box<ProfileDBO>? _profileBox;
 
@@ -60,6 +61,7 @@ class FakeHiveDBProvider extends HiveDBProvider {
     Box<WaterIntakeDBO>? waterIntakeBox,
     Box<FastingSessionDBO>? fastingBox,
     Box<String>? favoriteBox,
+    Box<String>? ownPortionBox,
     Box<String>? bodyMeasurementBox,
     Box<ProfileDBO>? profileBox,
   })  : _configBox = configBox,
@@ -76,6 +78,7 @@ class FakeHiveDBProvider extends HiveDBProvider {
         _waterIntakeBox = waterIntakeBox,
         _fastingBox = fastingBox,
         _favoriteBox = favoriteBox,
+        _ownPortionBox = ownPortionBox,
         _bodyMeasurementBox = bodyMeasurementBox,
         _profileBox = profileBox;
 
@@ -115,6 +118,8 @@ class FakeHiveDBProvider extends HiveDBProvider {
   Box<FastingSessionDBO> get fastingBox => _require(_fastingBox);
   @override
   Box<String> get favoriteBox => _require(_favoriteBox);
+  @override
+  Box<String> get ownPortionBox => _require(_ownPortionBox);
   @override
   Box<String> get bodyMeasurementBox => _require(_bodyMeasurementBox);
   @override
