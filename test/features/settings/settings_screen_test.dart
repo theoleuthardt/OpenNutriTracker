@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
+import 'package:opennutritracker/features/recipes/domain/home_recipes_setting.dart';
 import 'package:opennutritracker/core/domain/entity/app_theme_entity.dart';
 import 'package:opennutritracker/core/utils/ai_credential_storage.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
@@ -81,6 +82,7 @@ void _register() {
   getIt.registerSingleton<DiaryBloc>(_FakeDiaryBloc());
   getIt.registerSingleton<CalendarDayBloc>(_FakeCalendarDayBloc());
   getIt.registerSingleton<TrendsBloc>(_FakeTrendsBloc());
+  getIt.registerSingleton<HomeRecipesSetting>(_FakeHomeRecipesSetting());
   final credentials = AiCredentialStorage(_EmptyStorage());
   getIt.registerSingleton<AiCredentialStorage>(credentials);
   getIt.registerSingleton<AiEndpointProbeRunner>(
@@ -244,4 +246,15 @@ void main() {
 
     expect(find.byType(AiAssistDialog), findsNothing);
   });
+}
+
+class _FakeHomeRecipesSetting implements HomeRecipesSetting {
+  @override
+  final changes = ValueNotifier<int>(0);
+
+  @override
+  Future<bool> visible() async => true;
+
+  @override
+  Future<void> save(bool visible) async {}
 }

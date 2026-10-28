@@ -246,6 +246,10 @@ class ConfigDBO extends HiveObject {
   // were first read, which takes over the daily reminder above.
   @HiveField(118)
   String? remindersJson;
+  // Whether the home page shows the recipes section (#159,
+  // HomeRecipesSetting); null means shown.
+  @HiveField(119)
+  bool? showHomeRecipes;
 
   ConfigDBO(
     this.hasAcceptedDisclaimer,
@@ -304,6 +308,7 @@ class ConfigDBO extends HiveObject {
     this.trendsTolerancePercent,
     this.trendsDeficitThresholdPercent,
     this.remindersJson,
+    this.showHomeRecipes,
   });
 
   factory ConfigDBO.empty() =>

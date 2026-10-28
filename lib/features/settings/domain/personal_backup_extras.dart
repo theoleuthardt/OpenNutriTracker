@@ -91,6 +91,7 @@ class PersonalBackupExtras {
     'offSearchCountry',
     'nutrientReferenceStandard',
     'remindersJson',
+    'showHomeRecipes',
     'trendsTolerancePercent',
     'trendsDeficitThresholdPercent',
   ];
